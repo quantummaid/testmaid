@@ -18,6 +18,9 @@
         <junit.version>5.7.2</junit.version>
         <sonar.coverage.jacoco.xmlReportPaths>../coverage/target/site/jacoco-aggregate/jacoco.xml
         </sonar.coverage.jacoco.xmlReportPaths>
+        <sonar.coverage.exclusions>
+            **/Dummy.java,
+        </sonar.coverage.exclusions>
     </properties>
 
     <dependencies>
