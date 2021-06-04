@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>de.quantummaid.testmaid</groupId>
+        <artifactId>testmaid-parent</artifactId>
+        <version>0.0.1</version>
+    </parent>
+
+    <artifactId>testmaid-core</artifactId>
+
+    <name>TestMaid - Core</name>
+
+    <properties>
+        <dependency-update-file-checksum>42f33b16b7099885cd5becc23c104f35</dependency-update-file-checksum>
+        <plugin-update-file-checksum>35fe547b725ca8e71b0d13c8c21894df</plugin-update-file-checksum>
+        <junit.version>5.7.2</junit.version>
+        <sonar.coverage.jacoco.xmlReportPaths>../coverage/target/site/jacoco-aggregate/jacoco.xml
+        </sonar.coverage.jacoco.xmlReportPaths>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>de.quantummaid.injectmaid</groupId>
+            <artifactId>core</artifactId>
+            <version>0.1.8</version>
+        </dependency>
+    </dependencies>
+</project>
