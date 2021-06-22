@@ -1,4 +1,4 @@
-Copyright (c) ${license.year} Richard Hauswald - https://quantummaid.de/.
+Copyright (c) ${license.inceptionYear} Richard Hauswald - https://quantummaid.de/.
 
 Licensed to the Apache Software Foundation (ASF) under one
 or more contributor license agreements.  See the NOTICE file

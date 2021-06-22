@@ -32,3 +32,4 @@
 .envrc
 
 target/
+.idea/aws.xml
