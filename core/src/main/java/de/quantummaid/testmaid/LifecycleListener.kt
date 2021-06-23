@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2021 Richard Hauswald - https://quantummaid.de/.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -18,20 +18,24 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package de.quantummaid.testmaid
 
-import de.quantummaid.testmaid.junit5.activateJunit5Support
-import org.hamcrest.CoreMatchers.`is`
-import org.hamcrest.CoreMatchers.notNullValue
-import org.hamcrest.MatcherAssert.assertThat
-import org.junit.jupiter.api.Test
+import de.quantummaid.injectmaid.api.Injector
+import de.quantummaid.testmaid.model.testcase.TestCaseData
+import de.quantummaid.testmaid.model.testclass.TestClassData
 
-class TestMaidSpecs {
 
-    @Test
-    fun testMaidWorks() {
-        val testMaid = TestMaid.aTestMaid()
-        testMaid.activateJunit5Support()
-        assertThat(testMaid, `is`(notNullValue()))
-    }
+interface LifecycleListener {
+    fun startup(globalScopedInjector: Injector) {}
+
+    fun beforeTestSuite(testSuiteScopedInjector: Injector) {}
+    fun beforeTestClass(testClassData: TestClassData, testClassScopedInjector: Injector) {}
+    fun beforeTestCase(testCaseData: TestCaseData, testCaseScopedInjector: Injector) {}
+
+    fun afterTestCase(testCaseResult: TestCaseResult, testCaseScopedInjector: Injector) {}
+    fun afterTestClass(testClassResult: TestClassResult, testClassScopedInjector: Injector) {}
+    fun afterTestSuite(testSuiteResult: TestSuiteResult, testSuiteScopedInjector: Injector) {}
+
+    fun shutdown(globalScopedInjector: Injector) {}
 }

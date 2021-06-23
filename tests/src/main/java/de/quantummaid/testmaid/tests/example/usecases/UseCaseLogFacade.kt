@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Richard Hauswald - https://quantummaid.de/.
+ * Copyright (c) 2021 Richard Hauswald - https://quantummaid.de/.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -9,7 +9,7 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *   http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
@@ -19,9 +19,12 @@
  * under the License.
  */
 
-package de.quantummaid.testmaid;
+package de.quantummaid.testmaid.tests.example.usecases
 
-@SuppressWarnings("java:S2094")
-public final class Dummy {
-    // in order to trigger javadoc
+import de.quantummaid.testmaid.tests.example.model.Customer
+
+interface UseCaseLogFacade {
+    fun debugCreatingCustomer(firstName: String, lastName: String)
+    fun infoCustomerCreated(customer: Customer)
+    fun debugListingCustomers(customers: List<Customer>)
 }

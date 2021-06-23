@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2021 Richard Hauswald - https://quantummaid.de/.
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -18,13 +18,39 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package de.quantummaid.testmaid
 
-class TestMaid {
+import de.quantummaid.injectmaid.InjectMaidBuilder
+import de.quantummaid.testmaid.internal.TestMaidImpl
+import de.quantummaid.testmaid.internal.testsuite.TestSuiteActor
+import de.quantummaid.testmaid.model.testcase.TestCaseScope
+import de.quantummaid.testmaid.model.testclass.TestClassScope
+import de.quantummaid.testmaid.model.testsuite.TestSuiteScope
+
+interface TestMaid {
+    val integrationApi: TestMaidIntegrationApi
+    val injectionApi: TestMaidInjectionApi
 
     companion object {
-        fun aTestMaid(): TestMaid {
-            return TestMaid()
+        fun craftTestMaid(
+            injectMaidBuilder: InjectMaidBuilder,
+            skipDecider: SkipDecider = SkipDecider.alwaysExecute(),
+            lifecycleListener: LifecycleListener = object : LifecycleListener {}
+        ): TestMaid {
+            val injectMaid = injectMaidBuilder
+                .withLifecycleManagement()
+                .closeOnJvmShutdown()
+                .withScope(TestSuiteScope::class.java) { testSuiteInjectMaid ->
+                    testSuiteInjectMaid.withScope(TestClassScope::class.java) { testClassInjectMaid ->
+                        testClassInjectMaid.withScope(TestCaseScope::class.java) { testCaseInjectMaid ->
+                        }
+                    }
+                }
+                .build()
+
+            return TestMaidImpl(TestSuiteActor.aTestSuiteActor(injectMaid, skipDecider, lifecycleListener))
         }
+
     }
 }
