@@ -19,23 +19,26 @@
  * under the License.
  */
 
-package de.quantummaid.testmaid
+package de.quantummaid.testmaid.internal.statemachine
 
-import de.quantummaid.injectmaid.api.Injector
-import de.quantummaid.testmaid.model.testcase.TestCaseData
-import de.quantummaid.testmaid.model.testclass.TestClassData
+import kotlinx.coroutines.*
+import java.util.concurrent.ConcurrentLinkedQueue
 
+internal class StateMachineActorPool {
+    private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+    val activeJobs = ConcurrentLinkedQueue<Job>()
 
-interface LifecycleListener {
-    fun startup(globalScopedInjector: Injector) {}
-
-    fun beforeTestSuite(testSuiteScopedInjector: Injector) {}
-    fun beforeTestClass(testClassData: TestClassData, testClassScopedInjector: Injector) {}
-    fun beforeTestCase(testCaseData: TestCaseData, testCaseScopedInjector: Injector) {}
-
-    fun afterTestCase(testCaseResult: TestCaseResult, testCaseScopedInjector: Injector) {}
-    fun afterTestClass(testClassResult: TestClassResult, testClassScopedInjector: Injector) {}
-    fun afterTestSuite(testSuiteResult: TestSuiteResult, testSuiteScopedInjector: Injector) {}
-
-    fun shutdown(globalScopedInjector: Injector) {}
+    fun launch(block: suspend CoroutineScope.() -> Unit): Job {
+        val deferredJobReference = CompletableDeferred<Job>()
+        val job: Job = scope.launch(Dispatchers.Default) {
+            block()
+            val job = withTimeout(100) {
+                deferredJobReference.await()
+            }
+            activeJobs.remove(job)
+        }
+        activeJobs.add(job)
+        deferredJobReference.complete(job)
+        return job
+    }
 }

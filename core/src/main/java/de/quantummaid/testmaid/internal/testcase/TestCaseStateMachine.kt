@@ -22,9 +22,8 @@
 package de.quantummaid.testmaid.internal.testcase
 
 import de.quantummaid.injectmaid.api.Injector
-import de.quantummaid.testmaid.internal.StateMachineActor
-import de.quantummaid.testmaid.internal.StateMachineBuilder.Companion.aStateMachineUsing
-import de.quantummaid.testmaid.model.Timings
+import de.quantummaid.testmaid.internal.statemachine.StateMachineActor
+import de.quantummaid.testmaid.internal.statemachine.StateMachineBuilder.Companion.aStateMachineUsing
 import de.quantummaid.testmaid.model.testcase.TestCaseData
 import de.quantummaid.testmaid.model.testcase.TestCaseScope
 import kotlinx.coroutines.CompletableDeferred
@@ -33,54 +32,43 @@ internal fun testCaseStateMachine(): StateMachineActor<TestCaseState, TestCaseMe
     return testCaseStateMachineBuilder.build()
 }
 
-private val testCaseStateMachineBuilder = aStateMachineUsing(TestCaseState::class, TestCaseMessage::class)
-    .withInitialState(InitialTestCase())
-    .withEndStateSuperClass(TestCaseEndState::class)
-    .withQueryHandler(RegisteredTestCaseState::class, QueryTimings::class) {
-        it.timings.complete(timings)
+private val testCaseStateMachineBuilder = aStateMachineUsing<TestCaseState, TestCaseMessage>()
+    .withInitialState(InitialTestCase)
+    .withEndStateSuperClass<TestCaseEndState>()
+    .withTransition<InitialTestCase, RegisterTestCase, RegisteredTestCase> {
+        RegisteredTestCase(it.testCaseData)
     }
-    .withTransition(InitialTestCase::class, RegisterTestCase::class) {
-        RegisteredTestCase(timings.recordRegisteredNow(), it.testCaseData)
+    .withTransition<RegisteredTestCase, SkipTestCase, SkippedTestCase> {
+        SkippedTestCase(testCaseData, it.reason)
     }
-    .withTransition(RegisteredTestCase::class, SkipTestCase::class) {
-        SkippedTestCase(timings.recordSkippedNow(), testCaseData, it.reason)
-    }
-    .withTransition(RegisteredTestCase::class, PrepareTestCase::class) {
+    .withTransition<RegisteredTestCase, PrepareTestCase, ReadyToExecuteTestCase> {
         val injector = it.parentInjector.enterScope(TestCaseScope(testCaseData))
-        ReadyToExecuteTestCase(timings.recordPreparedNow(), testCaseData, injector)
+        ReadyToExecuteTestCase(testCaseData, injector)
     }
-    .withTransition(ReadyToExecuteTestCase::class, CanProvideParameter::class) { msg ->
-        val canInstantiate = injector.canInstantiate(msg.dependencyType)
-        msg.result.complete(canInstantiate)
-
-        this
+    .withQuery<ReadyToExecuteTestCase, CanProvideParameter> {
+        val canInstantiate = injector.canInstantiate(it.dependencyType)
+        it.result.complete(canInstantiate)
     }
-    .withTransition(ReadyToExecuteTestCase::class, ResolveParameter::class) {
+    .withQuery<ReadyToExecuteTestCase, ResolveParameter> {
         val resolution = injector.getInstance(it.dependencyType)
         it.result.complete(resolution)
-
-        this
     }
-    .withTransition(ReadyToExecuteTestCase::class, TestCaseFailed::class) {
-        FailedTestCase(timings.recordExecutedNow(), testCaseData, injector, it.cause)
+    .withTransition<ReadyToExecuteTestCase, TestCaseFailed, FailedTestCase> {
+        FailedTestCase(testCaseData, injector, it.cause)
     }
-    .withTransition(ReadyToExecuteTestCase::class, TestCasePassed::class) {
-        PassedTestCase(timings.recordExecutedNow(), testCaseData, injector)
+    .withTransition<ReadyToExecuteTestCase, TestCasePassed, PassedTestCase> {
+        PassedTestCase(testCaseData, injector)
     }
-    .withTransition(PassedTestCase::class, PostpareTestCase::class) {
+    .withTransition<PassedTestCase, PostpareTestCase, PostparedPassedTestCase> {
         injector.close()
-        //TODO: Proper end state
-        this
+        PostparedPassedTestCase(testCaseData)
     }
-    .withTransition(FailedTestCase::class, PostpareTestCase::class) {
+    .withTransition<FailedTestCase, PostpareTestCase, PostparedFailedTestCase> {
         injector.close()
-        //TODO: Proper end state
-        this
+        PostparedFailedTestCase
     }
 
-internal interface TestCaseState {
-    val timings: Timings
-}
+internal interface TestCaseState
 
 internal interface RegisteredTestCaseState : TestCaseState {
     val testCaseData: TestCaseData
@@ -88,40 +76,39 @@ internal interface RegisteredTestCaseState : TestCaseState {
 
 internal interface TestCaseEndState : RegisteredTestCaseState
 
-internal data class InitialTestCase(override val timings: Timings = Timings()) : TestCaseState
+internal object InitialTestCase : TestCaseState
 
-internal data class RegisteredTestCase(override val timings: Timings, override val testCaseData: TestCaseData) :
+internal data class RegisteredTestCase(override val testCaseData: TestCaseData) :
     RegisteredTestCaseState
 
 internal data class ReadyToExecuteTestCase(
-    override val timings: Timings,
     val testCaseData: TestCaseData,
     val injector: Injector
 ) : TestCaseState
 
 internal data class PassedTestCase(
-    override val timings: Timings,
     override val testCaseData: TestCaseData,
     val injector: Injector
 ) :
     RegisteredTestCaseState
 
+internal data class PostparedPassedTestCase(override val testCaseData: TestCaseData) : TestCaseEndState
+
 internal data class FailedTestCase(
-    override val timings: Timings,
     override val testCaseData: TestCaseData,
     val injector: Injector,
     var cause: Throwable
 ) :
     RegisteredTestCaseState
 
+object PostparedFailedTestCase : TestCaseState
+
 internal data class SkippedTestCase(
-    override val timings: Timings,
     override val testCaseData: TestCaseData,
     val reason: String
 ) : TestCaseEndState
 
 internal interface TestCaseMessage
-internal data class QueryTimings(val timings: CompletableDeferred<Timings> = CompletableDeferred()) : TestCaseMessage
 internal data class RegisterTestCase(val testCaseData: TestCaseData) : TestCaseMessage
 
 internal data class SkipTestCase(val reason: String) : TestCaseMessage
@@ -131,11 +118,11 @@ internal object TestCasePassed : TestCaseMessage
 internal object PostpareTestCase : TestCaseMessage
 
 internal data class CanProvideParameter(
-    val dependencyType: Class<Any>,
+    val dependencyType: Class<*>,
     val result: CompletableDeferred<Boolean> = CompletableDeferred()
 ) : TestCaseMessage
 
 internal data class ResolveParameter(
-    val dependencyType: Class<Any>,
+    val dependencyType: Class<*>,
     val result: CompletableDeferred<Any> = CompletableDeferred()
 ) : TestCaseMessage

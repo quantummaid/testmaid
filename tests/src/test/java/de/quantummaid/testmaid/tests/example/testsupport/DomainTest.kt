@@ -22,9 +22,14 @@
 package de.quantummaid.testmaid.tests.example.testsupport
 
 import de.quantummaid.injectmaid.InjectMaid
+import de.quantummaid.injectmaid.api.Injector
 import de.quantummaid.injectmaid.api.InjectorConfiguration
+import de.quantummaid.testmaid.ExecutionDecision
+import de.quantummaid.testmaid.SkipDecider
 import de.quantummaid.testmaid.TestMaid
 import de.quantummaid.testmaid.junit5.TestMaidJunit5Adapter
+import de.quantummaid.testmaid.model.testcase.TestCaseData
+import de.quantummaid.testmaid.model.testclass.TestClassData
 import org.junit.jupiter.api.extension.ExtendWith
 import kotlin.reflect.KClass
 
@@ -32,6 +37,24 @@ import kotlin.reflect.KClass
 @Target(AnnotationTarget.CLASS)
 @ExtendWith(DomainTestSupport::class)
 annotation class DomainTest(vararg val injectorConfigurations: KClass<out InjectorConfiguration>)
+
+class DomainTestSkipDecider : SkipDecider {
+    override fun skipTestCase(testCaseData: TestCaseData, testSuiteScopedInjector: Injector): ExecutionDecision {
+        return if (testCaseData.name == "CustomerSpecs.testCaseThatIsSkipped()") {
+            ExecutionDecision(false, "This test is skipped")
+        } else {
+            ExecutionDecision(true, "Test cases are executed by default")
+        }
+    }
+
+    override fun skipTestClass(testClassData: TestClassData, testSuiteScopedInjector: Injector): ExecutionDecision {
+        return if (testClassData.name == "SkippedCustomerSpecs") {
+            ExecutionDecision(false, "This class is skipped")
+        } else {
+            ExecutionDecision(true, "Test classes are executed by default")
+        }
+    }
+}
 
 private class DomainTestSupport : TestMaidJunit5Adapter(testMaid) {
     companion object {
@@ -42,7 +65,8 @@ private class DomainTestSupport : TestMaidJunit5Adapter(testMaid) {
                 .withLifecycleManagement()
                 .closeOnJvmShutdown()
                 .withConfiguration(InMemoryConfiguration())
-            return TestMaid.craftTestMaid(injectMaidBuilder)
+            val skipDecider = DomainTestSkipDecider()
+            return TestMaid.buildTestMaid(injectMaidBuilder, skipDecider)
         }
     }
 }

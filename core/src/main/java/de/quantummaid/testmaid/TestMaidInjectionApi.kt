@@ -25,8 +25,8 @@ import de.quantummaid.testmaid.model.testcase.TestCaseData
 import de.quantummaid.testmaid.model.testclass.TestClassData
 
 interface TestMaidInjectionApi {
-    fun canProvideTestClassDependency(testClassData: TestClassData, dependencyType: Class<Any>): Boolean
-    fun canProvideTestCaseDependency(testCaseData: TestCaseData, dependencyType: Class<Any>): Boolean
+    fun canProvideTestClassDependency(testClassData: TestClassData, dependencyType: Class<*>): Boolean
+    fun canProvideTestCaseDependency(testCaseData: TestCaseData, dependencyType: Class<*>): Boolean
 
     fun <T> resolveTestClassDependency(testClassData: TestClassData, dependencyType: Class<T>): T
     fun <T> resolveTestCaseDependency(testCaseData: TestCaseData, dependencyType: Class<T>): T

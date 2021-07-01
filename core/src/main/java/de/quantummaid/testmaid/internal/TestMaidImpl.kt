@@ -29,12 +29,19 @@ import de.quantummaid.testmaid.model.testcase.TestCaseData
 import de.quantummaid.testmaid.model.testclass.TestClassData
 import de.quantummaid.testmaid.model.testsuite.TestSuite
 
-internal class TestMaidImpl(private val testSuite: TestSuite) : TestMaid, TestMaidIntegrationApi, TestMaidInjectionApi {
+internal class TestMaidImpl(
+    private val testSuite: TestSuite,
+    private val injector: AutoCloseable
+) : TestMaid, TestMaidIntegrationApi, TestMaidInjectionApi {
 
     override val integrationApi: TestMaidIntegrationApi
         get() = this
     override val injectionApi: TestMaidInjectionApi
         get() = this
+
+    override fun testSuiteFinish() {
+        testSuite.postpareTestSuite()
+    }
 
     override fun registerTestClass(testClassData: TestClassData): ExecutionDecision {
         return testSuite.registerTestClass(testClassData)
@@ -60,11 +67,11 @@ internal class TestMaidImpl(private val testSuite: TestSuite) : TestMaid, TestMa
         testSuite.postpareTestCase(testCaseData, error)
     }
 
-    override fun canProvideTestClassDependency(testClassData: TestClassData, dependencyType: Class<Any>): Boolean {
+    override fun canProvideTestClassDependency(testClassData: TestClassData, dependencyType: Class<*>): Boolean {
         return testSuite.canProvideTestClassDependency(testClassData, dependencyType)
     }
 
-    override fun canProvideTestCaseDependency(testCaseData: TestCaseData, dependencyType: Class<Any>): Boolean {
+    override fun canProvideTestCaseDependency(testCaseData: TestCaseData, dependencyType: Class<*>): Boolean {
         return testSuite.canProvideTestCaseDependency(testCaseData, dependencyType)
     }
 
@@ -74,5 +81,10 @@ internal class TestMaidImpl(private val testSuite: TestSuite) : TestMaid, TestMa
 
     override fun <T> resolveTestCaseDependency(testCaseData: TestCaseData, dependencyType: Class<T>): T {
         return testSuite.resolveTestCaseDependency(testCaseData, dependencyType)
+    }
+
+    override fun close() {
+        testSuite.close()
+        injector.close()
     }
 }

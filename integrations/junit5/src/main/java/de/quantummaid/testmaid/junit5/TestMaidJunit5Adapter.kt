@@ -28,13 +28,24 @@ import de.quantummaid.testmaid.model.testclass.TestClassData
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.extension.*
 import org.junit.jupiter.api.extension.ExtensionContext.Namespace
+import org.junit.jupiter.api.extension.ExtensionContext.Namespace.GLOBAL
+import java.util.concurrent.locks.Lock
+import java.util.concurrent.locks.ReentrantLock
+
 
 abstract class TestMaidJunit5Adapter(val testMaid: TestMaid) :
-    BeforeAllCallback, AfterAllCallback,
+    BeforeAllCallback,
+    AfterAllCallback,
     BeforeTestExecutionCallback,
     AfterTestExecutionCallback,
     ExecutionCondition,
-    ParameterResolver {
+    ParameterResolver,
+    ExtensionContext.Store.CloseableResource {
+
+    companion object {
+        private val lock: Lock = ReentrantLock()
+        private var started = false
+    }
 
     override fun evaluateExecutionCondition(context: ExtensionContext): ConditionEvaluationResult {
         val testClass: Class<*> = context.requiredTestClass
@@ -81,8 +92,13 @@ abstract class TestMaidJunit5Adapter(val testMaid: TestMaid) :
         testMaid.integrationApi.testCaseFinish(testCaseData, context.executionException.orElse(null))
     }
 
-
     override fun beforeAll(context: ExtensionContext) {
+        lock.lock()
+        if (!started) {
+            started = true;
+            context.root.getStore(GLOBAL).put("afterAllHook", this);
+        }
+        lock.unlock()
         val testClassData = context.getFromMyStore(context.uniqueId, TestClassData::class.java)
         testMaid.integrationApi.testClassStart(testClassData)
     }
@@ -90,6 +106,11 @@ abstract class TestMaidJunit5Adapter(val testMaid: TestMaid) :
     override fun afterAll(context: ExtensionContext) {
         val testClassData = context.getFromMyStore(context.uniqueId, TestClassData::class.java)
         testMaid.integrationApi.testClassFinish(testClassData)
+    }
+
+    override fun close() {
+        testMaid.integrationApi.testSuiteFinish()
+        testMaid.close()
     }
 
     override fun supportsParameter(parameterContext: ParameterContext, context: ExtensionContext): Boolean {

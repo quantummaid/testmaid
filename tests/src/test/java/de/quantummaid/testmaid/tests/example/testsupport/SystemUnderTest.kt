@@ -25,5 +25,4 @@ import de.quantummaid.testmaid.tests.example.usecases.CustomerDto
 
 interface SystemUnderTest {
     fun listCustomers(): List<CustomerDto>
-
 }
