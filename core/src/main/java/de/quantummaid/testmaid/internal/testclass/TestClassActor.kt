@@ -22,14 +22,13 @@
 package de.quantummaid.testmaid.internal.testclass
 
 import de.quantummaid.injectmaid.api.Injector
-import de.quantummaid.testmaid.internal.StateMachineActor
-import de.quantummaid.testmaid.model.Timings
+import de.quantummaid.testmaid.internal.statemachine.StateMachineActor
 import de.quantummaid.testmaid.model.testcase.TestCaseData
 import de.quantummaid.testmaid.model.testclass.TestClass
 import de.quantummaid.testmaid.model.testclass.TestClassData
 import kotlinx.coroutines.runBlocking
 
-internal class TestClassActor private constructor(private val delegate: StateMachineActor<TestClassState, TestClassMessage>) :
+internal class TestClassActor private constructor(internal val delegate: StateMachineActor<TestClassState, TestClassMessage>) :
     TestClass {
     companion object {
         fun aTestClassActor(): TestClassActor {
@@ -39,7 +38,6 @@ internal class TestClassActor private constructor(private val delegate: StateMac
 
     override fun register(testClassData: TestClassData) {
         delegate.signalAwaitingSuccess(RegisterTestClass(testClassData))
-
     }
 
     override fun skip(reason: String) {
@@ -55,8 +53,10 @@ internal class TestClassActor private constructor(private val delegate: StateMac
         delegate.signalAwaitingSuccess(PostpareTestClass)
     }
 
-    override fun registerTestCase(testCaseData: TestCaseData) {
-        delegate.signalAwaitingSuccess(RegisterTestCase(testCaseData))
+    override fun registerTestCase(testCaseData: TestCaseData): AutoCloseable {
+        val msg = RegisterTestCase(testCaseData)
+        delegate.signalAwaitingSuccess(msg)
+        return runBlocking { msg.actor.await() }
     }
 
     override fun skipTestCase(testCaseData: TestCaseData, reason: String) {
@@ -71,43 +71,27 @@ internal class TestClassActor private constructor(private val delegate: StateMac
         delegate.signalAwaitingSuccess(PostpareTestCase(testCaseData, error))
     }
 
-    override fun timings(): Timings {
-        val queryTimings = QueryTimings()
-        delegate.signalAwaitingSuccess(queryTimings)
-        return runBlocking {
-            queryTimings.timings.await()
-        }
-    }
-
-    override fun canProvideDependency(dependencyType: Class<Any>): Boolean {
+    override fun canProvideDependency(dependencyType: Class<*>): Boolean {
         val msg = CanProvideParameter(dependencyType)
         delegate.signalAwaitingSuccess(msg)
-
-        val result = runBlocking { msg.result.await() }
-        return result
+        return runBlocking { msg.result.await() }
     }
 
-    override fun canProvideTestCaseDependency(testCaseData: TestCaseData, dependencyType: Class<Any>): Boolean {
+    override fun canProvideTestCaseDependency(testCaseData: TestCaseData, dependencyType: Class<*>): Boolean {
         val msg = CanProvideTestCaseParameter(testCaseData, dependencyType)
         delegate.signalAwaitingSuccess(msg)
-
-        val result = runBlocking { msg.result.await() }
-        return result
+        return runBlocking { msg.result.await() }
     }
 
-    override fun resolveDependency(dependencyType: Class<Any>): Any {
+    override fun resolveDependency(dependencyType: Class<*>): Any {
         val msg = ResolveParameter(dependencyType)
         delegate.signalAwaitingSuccess(msg)
-
-        val result = runBlocking { msg.result.await() }
-        return result
+        return runBlocking { msg.result.await() }
     }
 
-    override fun resolveTestCaseDependency(testCaseData: TestCaseData, dependencyType: Class<Any>): Any {
+    override fun resolveTestCaseDependency(testCaseData: TestCaseData, dependencyType: Class<*>): Any {
         val msg = ResolveTestCaseParameter(testCaseData, dependencyType)
         delegate.signalAwaitingSuccess(msg)
-
-        val result = runBlocking { msg.result.await() }
-        return result
+        return runBlocking { msg.result.await() }
     }
 }

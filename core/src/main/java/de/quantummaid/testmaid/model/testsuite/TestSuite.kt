@@ -25,7 +25,9 @@ import de.quantummaid.testmaid.ExecutionDecision
 import de.quantummaid.testmaid.model.testcase.TestCaseData
 import de.quantummaid.testmaid.model.testclass.TestClassData
 
-interface TestSuite {
+interface TestSuite : AutoCloseable {
+    fun postpareTestSuite()
+
     fun registerTestClass(testClassData: TestClassData): ExecutionDecision
     fun prepareTestClass(testClassData: TestClassData)
     fun postpareTestClass(testClassData: TestClassData)
@@ -34,8 +36,8 @@ interface TestSuite {
     fun prepareTestCase(testCaseData: TestCaseData)
     fun postpareTestCase(testCaseData: TestCaseData, error: Throwable?)
 
-    fun canProvideTestClassDependency(testClassData: TestClassData, dependencyType: Class<Any>): Boolean
-    fun canProvideTestCaseDependency(testCaseData: TestCaseData, dependencyType: Class<Any>): Boolean
+    fun canProvideTestClassDependency(testClassData: TestClassData, dependencyType: Class<*>): Boolean
+    fun canProvideTestCaseDependency(testCaseData: TestCaseData, dependencyType: Class<*>): Boolean
     fun <T> resolveTestClassDependency(testClassData: TestClassData, dependencyType: Class<T>): T
     fun <T> resolveTestCaseDependency(testCaseData: TestCaseData, dependencyType: Class<T>): T
 }

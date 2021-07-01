@@ -23,6 +23,7 @@ package de.quantummaid.testmaid.tests.example
 import de.quantummaid.testmaid.tests.example.fixtures.ExistingCustomers
 import de.quantummaid.testmaid.tests.example.testsupport.DomainTest
 import de.quantummaid.testmaid.tests.example.testsupport.SystemUnderTest
+import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
@@ -46,5 +47,10 @@ class CustomerSpecs {
         assertEquals(existingCustomers.ellenRipley().customerId, result[2].customerId)
         assertEquals(existingCustomers.ellenRipley().firstName, result[2].firstName)
         assertEquals(existingCustomers.ellenRipley().lastName, result[2].lastName)
+    }
+
+    @Test
+    fun testCaseThatIsSkipped() {
+        Assertions.assertTrue(false)
     }
 }

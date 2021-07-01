@@ -21,13 +21,17 @@
 
 package de.quantummaid.testmaid.internal
 
+import de.quantummaid.testmaid.TestMaid
+import de.quantummaid.testmaid.internal.statemachine.StateMachineBuilder
+import de.quantummaid.testmaid.internal.statemachine.StateMachineBuilder.Companion.aStateMachineUsing
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.channels.ClosedSendChannelException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.fail
+import java.lang.UnsupportedOperationException
 
 interface ExampleState
 class ExampleStateInitial : ExampleState
@@ -42,22 +46,29 @@ data class QueryExampleStateMessage(
 object EndExampleState : ExampleStateMessage
 
 private val stateMachineBuilder =
-    StateMachineBuilder.aStateMachineUsing(ExampleState::class, ExampleStateMessage::class)
+    aStateMachineUsing<ExampleState, ExampleStateMessage>()
         .withInitialState(ExampleStateInitial())
-        .withEndStateSuperClass(ExampleStateEnd::class)
-        .withTransition(ExampleStateInitial::class, InitializeExampleState::class) {
+        .withEndStateSuperClass<ExampleStateEnd>()
+        .withTransition<ExampleStateInitial, InitializeExampleState, ExampleStateWorking> {
             ExampleStateWorking(it.message)
         }
-        .withQueryHandler(ExampleStateWorking::class, QueryExampleStateMessage::class) {
+        .withQuery<ExampleStateWorking, QueryExampleStateMessage> {
             it.message.complete(message)
         }
-        .withTransition(ExampleStateWorking::class, EndExampleState::class) {
+        .withTransition<ExampleStateWorking, EndExampleState, ExampleStateEnd> {
             ExampleStateEnd()
         }
 
-class HelperTest {
+class HelperSpecs {
     @Test
     internal fun testHappyPathTransition() {
+        runBlocking {
+            val timeout = System.currentTimeMillis() + 10000
+            while (StateMachineBuilder.actorPool.activeJobs.size > 0 && System.currentTimeMillis() < timeout) {
+                delay(1)
+            }
+            assertEquals(0, StateMachineBuilder.actorPool.activeJobs.size)
+        }
         assertEquals(0, StateMachineBuilder.actorPool.activeJobs.size)
         val stateMachineActor = stateMachineBuilder.build()
         assertEquals(1, StateMachineBuilder.actorPool.activeJobs.size)
@@ -85,10 +96,36 @@ class HelperTest {
     internal fun testUnsupportedMessageInCurrentState() {
         val stateMachineActor = stateMachineBuilder.build()
         stateMachineActor.signalAwaitingSuccess(InitializeExampleState("Hello World"))
+        var exception: java.lang.Exception? = null
         try {
             stateMachineActor.signalAwaitingSuccess(InitializeExampleState("Hello World"))
         } catch (e: Exception) {
-            e.printStackTrace()
+            exception = e
         }
+        assertNotNull(exception)
+    }
+
+    @Test
+    internal fun testExceptionInTransition() {
+        val stateMachineBuilderWithException = aStateMachineUsing<ExampleState, ExampleStateMessage>()
+                .withInitialState(ExampleStateInitial())
+                .withEndStateSuperClass<ExampleStateEnd>()
+                .withTransition<ExampleStateInitial, InitializeExampleState, ExampleStateWorking> {
+                    throw UnsupportedOperationException()
+                }
+        val stateMachineActor = stateMachineBuilderWithException.build()
+        var exception : UnsupportedOperationException? = null
+        try {
+            stateMachineActor.signalAwaitingSuccess(InitializeExampleState("abc"))
+        } catch (e: UnsupportedOperationException) {
+            exception = e
+        }
+        assertNotNull(exception)
+    }
+
+    @Test
+    internal fun testRender() {
+        val rendered = TestMaid.renderStateMachine()
+        assertNotNull(rendered)
     }
 }

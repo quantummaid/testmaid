@@ -22,9 +22,8 @@
 package de.quantummaid.testmaid.model.testclass
 
 import de.quantummaid.injectmaid.api.Injector
-import de.quantummaid.testmaid.model.Timings
+import de.quantummaid.testmaid.internal.statemachine.StateMachineActor
 import de.quantummaid.testmaid.model.testcase.TestCaseData
-
 
 interface TestClass {
     fun register(testClassData: TestClassData)
@@ -35,7 +34,7 @@ interface TestClass {
 
     fun postpare()
 
-    fun registerTestCase(testCaseData: TestCaseData)
+    fun registerTestCase(testCaseData: TestCaseData): AutoCloseable
 
     fun skipTestCase(testCaseData: TestCaseData, reason: String)
 
@@ -43,11 +42,9 @@ interface TestClass {
 
     fun postpareTestCase(testCaseData: TestCaseData, error: Throwable?)
 
-    fun timings(): Timings
+    fun canProvideDependency(dependencyType: Class<*>): Boolean
+    fun canProvideTestCaseDependency(testCaseData: TestCaseData, dependencyType: Class<*>): Boolean
 
-    fun canProvideDependency(dependencyType: Class<Any>): Boolean
-    fun canProvideTestCaseDependency(testCaseData: TestCaseData, dependencyType: Class<Any>): Boolean
-
-    fun resolveDependency(dependencyType: Class<Any>): Any
-    fun resolveTestCaseDependency(testCaseData: TestCaseData, dependencyType: Class<Any>): Any
+    fun resolveDependency(dependencyType: Class<*>): Any
+    fun resolveTestCaseDependency(testCaseData: TestCaseData, dependencyType: Class<*>): Any
 }

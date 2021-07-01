@@ -22,13 +22,12 @@
 package de.quantummaid.testmaid.internal.testcase
 
 import de.quantummaid.injectmaid.api.Injector
-import de.quantummaid.testmaid.internal.StateMachineActor
-import de.quantummaid.testmaid.model.Timings
+import de.quantummaid.testmaid.internal.statemachine.StateMachineActor
 import de.quantummaid.testmaid.model.testcase.TestCase
 import de.quantummaid.testmaid.model.testcase.TestCaseData
 import kotlinx.coroutines.runBlocking
 
-internal class TestCaseActor private constructor(private val delegate: StateMachineActor<TestCaseState, TestCaseMessage>) :
+internal class TestCaseActor private constructor(internal val delegate: StateMachineActor<TestCaseState, TestCaseMessage>) :
     TestCase {
     companion object {
         fun aTestCaseActor(): TestCaseActor {
@@ -61,25 +60,15 @@ internal class TestCaseActor private constructor(private val delegate: StateMach
         delegate.signalAwaitingSuccess(PostpareTestCase)
     }
 
-    override fun timings(): Timings {
-        val queryTimings = QueryTimings()
-        delegate.signalAwaitingSuccess(queryTimings)
-        return runBlocking {
-            queryTimings.timings.await()
-        }
-    }
-
-    override fun canProvideDependency(dependencyType: Class<Any>): Boolean {
+    override fun canProvideDependency(dependencyType: Class<*>): Boolean {
         val msg = CanProvideParameter(dependencyType)
         delegate.signalAwaitingSuccess(msg)
-
         return runBlocking { msg.result.await() }
     }
 
-    override fun resolveDependency(dependencyType: Class<Any>): Any {
+    override fun resolveDependency(dependencyType: Class<*>): Any {
         val msg = ResolveParameter(dependencyType)
         delegate.signalAwaitingSuccess(msg)
-
         return runBlocking { msg.result.await() }
     }
 }

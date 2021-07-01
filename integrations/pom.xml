@@ -26,12 +26,12 @@
     <parent>
         <groupId>de.quantummaid.testmaid</groupId>
         <artifactId>testmaid-parent</artifactId>
-        <version>0.0.1</version>
+        <version>0.0.3</version>
     </parent>
 
     <groupId>de.quantummaid.testmaid.integrations</groupId>
     <artifactId>integrations-parent</artifactId>
-    <version>0.0.1</version>
+    <version>0.0.3</version>
     <packaging>pom</packaging>
 
     <name>TestMaid - Integrations</name>

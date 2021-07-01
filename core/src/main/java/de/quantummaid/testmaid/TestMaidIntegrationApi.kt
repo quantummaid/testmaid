@@ -25,13 +25,14 @@ import de.quantummaid.testmaid.model.testcase.TestCaseData
 import de.quantummaid.testmaid.model.testclass.TestClassData
 
 interface TestMaidIntegrationApi {
+    fun testSuiteFinish()
+
     fun testClassStart(testClassData: TestClassData)
     fun testClassFinish(testClassData: TestClassData)
 
     fun testCaseStart(testCaseData: TestCaseData)
     fun testCaseFinish(testCaseData: TestCaseData, error: Throwable?)
 
-    //TODO: add this to user facing api as well
     fun registerTestClass(testClassData: TestClassData): ExecutionDecision
     fun registerTestCase(testCaseData: TestCaseData): ExecutionDecision
 }

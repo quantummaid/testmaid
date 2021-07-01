@@ -22,7 +22,6 @@
 package de.quantummaid.testmaid.model.testcase
 
 import de.quantummaid.injectmaid.api.Injector
-import de.quantummaid.testmaid.model.Timings
 
 interface TestCase {
 
@@ -38,8 +37,6 @@ interface TestCase {
 
     fun postpare()
 
-    fun timings(): Timings
-
-    fun canProvideDependency(dependencyType: Class<Any>): Boolean
-    fun resolveDependency(dependencyType: Class<Any>): Any
+    fun canProvideDependency(dependencyType: Class<*>): Boolean
+    fun resolveDependency(dependencyType: Class<*>): Any
 }

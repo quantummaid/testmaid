@@ -18,20 +18,17 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+package de.quantummaid.testmaid.tests.example
 
-package de.quantummaid.testmaid.junit5
+import de.quantummaid.testmaid.tests.example.testsupport.DomainTest
+import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Test
 
-import de.quantummaid.testmaid.TestMaidInjectionApi
-import org.junit.jupiter.api.extension.ExtensionContext
-import org.junit.jupiter.api.extension.ParameterContext
-import org.junit.jupiter.api.extension.ParameterResolver
+@DomainTest
+class SkippedCustomerSpecs {
 
-class TestMaidParameterResolver(private val testMaidInjectionApi: TestMaidInjectionApi) : ParameterResolver {
-    override fun supportsParameter(parameterContext: ParameterContext, extensionContext: ExtensionContext): Boolean {
-        return false
-    }
-
-    override fun resolveParameter(parameterContext: ParameterContext, extensionContext: ExtensionContext): Any {
-        TODO("Not yet implemented")
+    @Test
+    fun simpleTestCase() {
+        Assertions.assertTrue(false)
     }
 }

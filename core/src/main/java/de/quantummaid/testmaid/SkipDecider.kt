@@ -38,7 +38,7 @@ interface SkipDecider {
     fun skipTestCase(testCaseData: TestCaseData, testSuiteScopedInjector: Injector): ExecutionDecision
 }
 
-private class AlwaysExecute() : SkipDecider {
+private class AlwaysExecute : SkipDecider {
     override fun skipTestClass(testClassData: TestClassData, testSuiteScopedInjector: Injector): ExecutionDecision {
         return ExecutionDecision(true, "Test classes are executed by default")
     }

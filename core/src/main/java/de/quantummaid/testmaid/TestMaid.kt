@@ -23,20 +23,22 @@ package de.quantummaid.testmaid
 
 import de.quantummaid.injectmaid.InjectMaidBuilder
 import de.quantummaid.testmaid.internal.TestMaidImpl
+import de.quantummaid.testmaid.internal.testcase.testCaseStateMachine
+import de.quantummaid.testmaid.internal.testclass.testClassStateMachine
 import de.quantummaid.testmaid.internal.testsuite.TestSuiteActor
+import de.quantummaid.testmaid.internal.testsuite.testSuiteStateMachine
 import de.quantummaid.testmaid.model.testcase.TestCaseScope
 import de.quantummaid.testmaid.model.testclass.TestClassScope
 import de.quantummaid.testmaid.model.testsuite.TestSuiteScope
 
-interface TestMaid {
+interface TestMaid : AutoCloseable {
     val integrationApi: TestMaidIntegrationApi
     val injectionApi: TestMaidInjectionApi
 
     companion object {
-        fun craftTestMaid(
+        fun buildTestMaid(
             injectMaidBuilder: InjectMaidBuilder,
-            skipDecider: SkipDecider = SkipDecider.alwaysExecute(),
-            lifecycleListener: LifecycleListener = object : LifecycleListener {}
+            skipDecider: SkipDecider = SkipDecider.alwaysExecute()
         ): TestMaid {
             val injectMaid = injectMaidBuilder
                 .withLifecycleManagement()
@@ -49,8 +51,20 @@ interface TestMaid {
                 }
                 .build()
 
-            return TestMaidImpl(TestSuiteActor.aTestSuiteActor(injectMaid, skipDecider, lifecycleListener))
+            return TestMaidImpl(TestSuiteActor.aTestSuiteActor(injectMaid, skipDecider), injectMaid)
         }
 
+        fun renderStateMachine(): String {
+            val testSuiteStateMachine = "testsuite" to testSuiteStateMachine().renderStateMachine()
+            val testClassStateMachine = "testclass" to testClassStateMachine().renderStateMachine()
+            val testCaseStateMachine = "testcase" to testCaseStateMachine().renderStateMachine()
+            return listOf(testSuiteStateMachine, testClassStateMachine, testCaseStateMachine)
+                .flatMap { (name, statements) -> renderInSubgraph(name, statements) }
+                .joinToString(prefix = "digraph G {\n", postfix = "\n}", separator = "\n")
+        }
     }
+}
+
+private fun renderInSubgraph(name: String, statements: List<String>): List<String> {
+    return listOf("subgraph cluster_$name {", "label = \"$name\";", "color=\"blue\";") + statements + "}"
 }

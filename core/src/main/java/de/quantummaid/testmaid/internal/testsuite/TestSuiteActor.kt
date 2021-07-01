@@ -23,9 +23,8 @@ package de.quantummaid.testmaid.internal.testsuite
 
 import de.quantummaid.injectmaid.api.Injector
 import de.quantummaid.testmaid.ExecutionDecision
-import de.quantummaid.testmaid.LifecycleListener
 import de.quantummaid.testmaid.SkipDecider
-import de.quantummaid.testmaid.internal.StateMachineActor
+import de.quantummaid.testmaid.internal.statemachine.StateMachineActor
 import de.quantummaid.testmaid.model.testcase.TestCaseData
 import de.quantummaid.testmaid.model.testclass.TestClassData
 import de.quantummaid.testmaid.model.testsuite.TestSuite
@@ -33,25 +32,32 @@ import kotlinx.coroutines.runBlocking
 
 class TestSuiteActor private constructor(private val delegate: StateMachineActor<TestSuiteState, TestSuiteMessage>) :
     TestSuite {
+    private val actorsToClose = mutableListOf<AutoCloseable>()
+        .apply { add(delegate) }
+
     companion object {
         fun aTestSuiteActor(
             injector: Injector,
             skipDecider: SkipDecider,
-            lifecycleListener: LifecycleListener
         ): TestSuiteActor {
             val delegate = testSuiteStateMachine()
-            delegate.signalAwaitingSuccess(PrepareTestSuite(injector, skipDecider, lifecycleListener))
+            delegate.signalAwaitingSuccess(PrepareTestSuite(injector, skipDecider))
             return TestSuiteActor(delegate)
         }
+    }
+
+    override fun postpareTestSuite() {
+        delegate.signalAwaitingSuccess(AllTestsFinished)
     }
 
     override fun registerTestClass(testClassData: TestClassData): ExecutionDecision {
         val msg = RegisterTestClass(testClassData)
         delegate.signalAwaitingSuccess(msg)
 
-        return runBlocking {
-            msg.executionDecision.await()
-        }
+        val actor = runBlocking { msg.actor.await() }
+        actorsToClose.add(actor)
+
+        return runBlocking { msg.executionDecision.await() }
     }
 
     override fun prepareTestClass(testClassData: TestClassData) {
@@ -62,14 +68,12 @@ class TestSuiteActor private constructor(private val delegate: StateMachineActor
         delegate.signalAwaitingSuccess(PostpareTestClass(testClassData))
     }
 
-
     override fun registerTestCase(testCaseData: TestCaseData): ExecutionDecision {
         val msg = RegisterTestCase(testCaseData)
         delegate.signalAwaitingSuccess(msg)
-
-        return runBlocking {
-            msg.executionDecision.await()
-        }
+        val actor = runBlocking { msg.actor.await() }
+        actorsToClose.add(actor)
+        return runBlocking { msg.executionDecision.await() }
     }
 
     override fun prepareTestCase(testCaseData: TestCaseData) {
@@ -80,33 +84,31 @@ class TestSuiteActor private constructor(private val delegate: StateMachineActor
         delegate.signalAwaitingSuccess(PostpareTestCase(testCaseData, error))
     }
 
-    override fun canProvideTestClassDependency(testClassData: TestClassData, dependencyType: Class<Any>): Boolean {
+    override fun canProvideTestClassDependency(testClassData: TestClassData, dependencyType: Class<*>): Boolean {
         val msg = CanProvideTestClassParameter(testClassData, dependencyType)
         delegate.signalAwaitingSuccess(msg)
-
         return runBlocking { msg.result.await() }
     }
 
-    override fun canProvideTestCaseDependency(testCaseData: TestCaseData, dependencyType: Class<Any>): Boolean {
+    override fun canProvideTestCaseDependency(testCaseData: TestCaseData, dependencyType: Class<*>): Boolean {
         val msg = CanProvideTestCaseParameter(testCaseData, dependencyType)
         delegate.signalAwaitingSuccess(msg)
-
         return runBlocking { msg.result.await() }
     }
 
     override fun <T> resolveTestClassDependency(testClassData: TestClassData, dependencyType: Class<T>): T {
         val msg = ResolveTestClassParameter(testClassData, dependencyType as Class<Any>)
         delegate.signalAwaitingSuccess(msg)
-
-        val resolution = runBlocking { msg.result.await() }
-        return resolution as T
+        return runBlocking { msg.result.await() } as T
     }
 
     override fun <T> resolveTestCaseDependency(testCaseData: TestCaseData, dependencyType: Class<T>): T {
         val msg = ResolveTestCaseParameter(testCaseData, dependencyType as Class<Any>)
         delegate.signalAwaitingSuccess(msg)
+        return runBlocking { msg.result.await() } as T
+    }
 
-        val resolution = runBlocking { msg.result.await() }
-        return resolution as T
+    override fun close() {
+        actorsToClose.forEach { it.close() }
     }
 }

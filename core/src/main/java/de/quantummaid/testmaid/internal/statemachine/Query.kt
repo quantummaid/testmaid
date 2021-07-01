@@ -19,35 +19,26 @@
  * under the License.
  */
 
-package de.quantummaid.testmaid.model
+package de.quantummaid.testmaid.internal.statemachine
 
-import java.time.Instant
+import kotlin.reflect.KClass
+import kotlin.reflect.cast
 
-data class Timings(
-    val init: Instant = Instant.now(),
-    var registered: Instant? = null,
-    var prepared: Instant? = null,
-    var executed: Instant? = null,
-    var postpared: Instant? = null,
-    var skipped: Instant? = null,
+internal data class Query<StateSuperClass : Any, MessageSuperClass : Any, OriginState : StateSuperClass, Message : MessageSuperClass>(
+    val originStateClass: KClass<OriginState>,
+    val messageClass: KClass<Message>,
+    val handler: OriginState.(Message) -> Unit
 ) {
-    fun recordRegisteredNow(): Timings {
-        return this.copy(registered = Instant.now())
-    }
 
-    fun recordPreparedNow(): Timings {
-        return this.copy(prepared = Instant.now())
-    }
-
-    fun recordExecutedNow(): Timings {
-        return this.copy(executed = Instant.now())
-    }
-
-    fun recordPostparedNow(): Timings {
-        return this.copy(postpared = Instant.now())
-    }
-
-    fun recordSkippedNow(): Timings {
-        return this.copy(skipped = Instant.now())
+    fun handle(currentState: StateSuperClass, message: MessageSuperClass): Boolean {
+        val stateMatches = this.originStateClass.isInstance(currentState)
+        if (stateMatches) {
+            val messageMatches = message::class == this.messageClass
+            if (messageMatches) {
+                handler(this.originStateClass.cast(currentState), this.messageClass.cast(message))
+                return true
+            }
+        }
+        return false
     }
 }
