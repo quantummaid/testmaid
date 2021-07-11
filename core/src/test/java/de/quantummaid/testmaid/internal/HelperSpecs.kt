@@ -27,11 +27,8 @@ import de.quantummaid.testmaid.internal.statemachine.StateMachineBuilder.Compani
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
-import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.*
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
-import java.lang.UnsupportedOperationException
 
 interface ExampleState
 class ExampleStateInitial : ExampleState
@@ -46,7 +43,7 @@ data class QueryExampleStateMessage(
 object EndExampleState : ExampleStateMessage
 
 private val stateMachineBuilder =
-    aStateMachineUsing<ExampleState, ExampleStateMessage>()
+    aStateMachineUsing<ExampleState, ExampleStateMessage>("test")
         .withInitialState(ExampleStateInitial())
         .withEndStateSuperClass<ExampleStateEnd>()
         .withTransition<ExampleStateInitial, InitializeExampleState, ExampleStateWorking> {
@@ -64,14 +61,14 @@ class HelperSpecs {
     internal fun testHappyPathTransition() {
         runBlocking {
             val timeout = System.currentTimeMillis() + 10000
-            while (StateMachineBuilder.actorPool.activeJobs.size > 0 && System.currentTimeMillis() < timeout) {
+            while (StateMachineBuilder.actorPool.activeActors.size > 0 && System.currentTimeMillis() < timeout) {
                 delay(1)
             }
-            assertEquals(0, StateMachineBuilder.actorPool.activeJobs.size)
+            assertEquals(0, StateMachineBuilder.actorPool.activeActors.size)
         }
-        assertEquals(0, StateMachineBuilder.actorPool.activeJobs.size)
+        assertEquals(0, StateMachineBuilder.actorPool.activeActors.size)
         val stateMachineActor = stateMachineBuilder.build()
-        assertEquals(1, StateMachineBuilder.actorPool.activeJobs.size)
+        assertEquals(1, StateMachineBuilder.actorPool.activeActors.size)
         assertTrue(stateMachineActor.isActive())
         stateMachineActor.signalAwaitingSuccess(InitializeExampleState("Hello World"))
         val queryExampleStateMessage = QueryExampleStateMessage()
@@ -84,10 +81,10 @@ class HelperSpecs {
         stateMachineActor.stop()
         runBlocking {
             val timeout = System.currentTimeMillis() + 1000
-            while (StateMachineBuilder.actorPool.activeJobs.size == 1 && System.currentTimeMillis() < timeout) {
+            while (StateMachineBuilder.actorPool.activeActors.size == 1 && System.currentTimeMillis() < timeout) {
                 delay(1)
             }
-            assertEquals(0, StateMachineBuilder.actorPool.activeJobs.size)
+            assertEquals(0, StateMachineBuilder.actorPool.activeActors.size)
         }
         assertFalse(stateMachineActor.isActive())
     }
@@ -107,7 +104,7 @@ class HelperSpecs {
 
     @Test
     internal fun testExceptionInTransition() {
-        val stateMachineBuilderWithException = aStateMachineUsing<ExampleState, ExampleStateMessage>()
+        val stateMachineBuilderWithException = aStateMachineUsing<ExampleState, ExampleStateMessage>("test")
                 .withInitialState(ExampleStateInitial())
                 .withEndStateSuperClass<ExampleStateEnd>()
                 .withTransition<ExampleStateInitial, InitializeExampleState, ExampleStateWorking> {

@@ -21,50 +21,42 @@
 
 package de.quantummaid.testmaid.internal.statemachine
 
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.runBlocking
+import de.quantummaid.reflectmaid.actors.Actor
+import de.quantummaid.reflectmaid.actors.ActorBuilder
+import de.quantummaid.reflectmaid.actors.ActorPool
+import kotlin.time.seconds
+
+object CloseMessage
 
 internal class StateMachineActor<StateSuperClass : Any, MessageSuperClass : Any> private constructor(
     private val stateMachine: StateMachine<StateSuperClass, MessageSuperClass>,
-    private val channel: Channel<StateMachineMessage<MessageSuperClass>>,
+    private val actor: Actor<StateMachine<StateSuperClass, MessageSuperClass>, Any>,
 ) : AutoCloseable {
-    private lateinit var job: Job
 
     companion object {
         fun <State : Any, Message : Any> launch(
-            actorPool: StateMachineActorPool,
+            name: String,
+            actorPool: ActorPool,
             stateMachine: StateMachine<State, Message>
         ): StateMachineActor<State, Message> {
-            val channel: Channel<StateMachineMessage<Message>> = Channel()
-            val stateMachineActor = StateMachineActor(stateMachine, channel)
-            val job = actorPool.launch {
-                stateMachineActor.handleMessagesOnChannel()
-            }
-            stateMachineActor.job = job
-            return stateMachineActor
-        }
-    }
-
-    private suspend fun handleMessagesOnChannel() {
-        for (msg in channel) {
-            stateMachine.handle(msg)
+            val actor: Actor<StateMachine<State, Message>, Any> =
+                ActorBuilder<StateMachine<State, Message>, Any>(name)
+                    .withPool(actorPool)
+                    .withMutatingHandler<StateMachineMessage<Message>> { handle(it) }
+                    .closeOn<CloseMessage>()
+                    .withInitialState(stateMachine)
+                    .launch()
+            return StateMachineActor(stateMachine, actor)
         }
     }
 
     fun signalAwaitingSuccess(msg: MessageSuperClass) {
-        val exception = runBlocking {
-            val stateMachineMessage = StateMachineMessage(msg)
-            channel.send(stateMachineMessage)
-            stateMachineMessage.exception.await()
-        }
-        if (exception != null) {
-            throw exception
-        }
+        val stateMachineMessage = StateMachineMessage(msg)
+        actor.signalAwaitingSuccess(stateMachineMessage, 10.seconds)
     }
 
     fun isActive(): Boolean {
-        return job.isActive
+        return actor.isActive()
     }
 
     fun isInEndState(): Boolean {
@@ -72,7 +64,7 @@ internal class StateMachineActor<StateSuperClass : Any, MessageSuperClass : Any>
     }
 
     fun stop() {
-        channel.close()
+        actor.signalAwaitingSuccess(CloseMessage)
     }
 
     override fun close() {

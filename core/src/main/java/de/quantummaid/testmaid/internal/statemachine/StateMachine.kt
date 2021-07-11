@@ -38,30 +38,28 @@ internal class StateMachine<StateSuperClass : Any, MessageSuperClass : Any>(
     private var currentState = initialState
 
     fun handle(message: StateMachineMessage<MessageSuperClass>) {
-        try {
-            val newState: StateSuperClass? = transitions
-                .mapNotNull { it.handle(currentState, message.payload) }
-                .singleOrNull()
-            if (newState != null) {
-                currentState = newState
-                message.exception.complete(null)
-            } else {
-                val query = queries.filter { it.handle(currentState, message.payload) }
-                when {
-                    query.size == 1 -> {
-                        message.exception.complete(null)
-                    }
-                    query.size > 1 -> {
-                        throw UnsupportedOperationException("Multiple handlers of ${message.payload} in state ${currentState}")
-                    }
-                    else -> {
-                        throw UnsupportedOperationException("Unsupported message ${message.payload::class.java} in state ${currentState::class}")
-                            .initCause(null)
-                    }
+        val newState: StateSuperClass? = transitions
+            .mapNotNull {
+                it.handle(currentState, message.payload)
+            }
+            .singleOrNull()
+        if (newState != null) {
+            currentState = newState
+            message.exception.complete(null)
+        } else {
+            val query = queries.filter { it.handle(currentState, message.payload) }
+            when {
+                query.size == 1 -> {
+                    message.exception.complete(null)
+                }
+                query.size > 1 -> {
+                    throw UnsupportedOperationException("Multiple handlers of ${message.payload} in state ${currentState}")
+                }
+                else -> {
+                    throw UnsupportedOperationException("Unsupported message ${message.payload::class.java} in state ${currentState::class}")
+                        .initCause(null)
                 }
             }
-        } catch (e: Throwable) {
-            message.exception.complete(e)
         }
     }
 

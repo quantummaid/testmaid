@@ -21,15 +21,18 @@
 
 package de.quantummaid.testmaid.internal.statemachine
 
+import de.quantummaid.reflectmaid.actors.ActorPool
+import de.quantummaid.testmaid.internal.statemachine.StateMachineActor.Companion.launch
 import kotlin.reflect.KClass
 
-internal class StateMachineBuilder<StateSuperClass : Any, MessageSuperClass : Any> {
+internal class StateMachineBuilder<StateSuperClass : Any, MessageSuperClass : Any>(private val name: String) {
     companion object {
-        val actorPool = StateMachineActorPool()
+        val actorPool = ActorPool(ActorPool.fixedThreadPoolDispatcher(3, "TestMaidActorPool"))
 
         fun <StateSuperClass : Any, MessageSuperClass : Any> aStateMachineUsing(
+            name: String
         ): StateMachineBuilder<StateSuperClass, MessageSuperClass> {
-            return StateMachineBuilder()
+            return StateMachineBuilder(name)
         }
     }
 
@@ -72,6 +75,6 @@ internal class StateMachineBuilder<StateSuperClass : Any, MessageSuperClass : An
         val stateMachine: StateMachine<StateSuperClass, MessageSuperClass> = StateMachine(
             transitions, queries, initialState!!, endStateSuperClass!!
         )
-        return StateMachineActor.launch(actorPool, stateMachine)
+        return launch(name, actorPool, stateMachine)
     }
 }

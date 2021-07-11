@@ -32,7 +32,7 @@ internal fun testCaseStateMachine(): StateMachineActor<TestCaseState, TestCaseMe
     return testCaseStateMachineBuilder.build()
 }
 
-private val testCaseStateMachineBuilder = aStateMachineUsing<TestCaseState, TestCaseMessage>()
+private val testCaseStateMachineBuilder = aStateMachineUsing<TestCaseState, TestCaseMessage>("TestCaseActor")
     .withInitialState(InitialTestCase)
     .withEndStateSuperClass<TestCaseEndState>()
     .withTransition<InitialTestCase, RegisterTestCase, RegisteredTestCase> {

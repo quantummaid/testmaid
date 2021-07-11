@@ -35,7 +35,7 @@ internal fun testClassStateMachine(): StateMachineActor<TestClassState, TestClas
     return testClassStateMachineBuilder.build()
 }
 
-private val testClassStateMachineBuilder = aStateMachineUsing<TestClassState, TestClassMessage>()
+private val testClassStateMachineBuilder = aStateMachineUsing<TestClassState, TestClassMessage>("TestClassActor")
     .withInitialState(InitialTestClass)
     .withEndStateSuperClass<TestClassEndState>()
     .withTransition<InitialTestClass, RegisterTestClass, RegisteredTestClass> {
