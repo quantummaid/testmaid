@@ -31,7 +31,7 @@
 
     <groupId>de.quantummaid.testmaid</groupId>
     <artifactId>testmaid-parent</artifactId>
-    <version>0.0.3</version>
+    <version>0.0.4</version>
     <packaging>pom</packaging>
 
     <name>TestMaid</name>
@@ -59,7 +59,7 @@
     <properties>
         <dependency-update-file-checksum>8f6ea182969b0fcce9fae1bb13579713</dependency-update-file-checksum>
         <plugin-update-file-checksum>7b8101b685be30c5d1abef25892b7b45</plugin-update-file-checksum>
-        <kotlin.version>1.4.32</kotlin.version>
+        <kotlin.version>1.5.20</kotlin.version>
         <junit.version>5.7.2</junit.version>
     </properties>
 
@@ -123,7 +123,9 @@
                     <javaParameters>true</javaParameters>
                     <jvmTarget>1.8</jvmTarget>
                     <args>
-                        <arg>-Xopt-in=kotlinx.coroutines.ObsoleteCoroutinesApi</arg>
+                        <arg>-Xopt-in=kotlin.time.ExperimentalTime</arg>
+                        <arg>-Xopt-in=kotlin.io.path.ExperimentalPathApi</arg>
+                        <arg>-Xopt-in=kotlin.io.path.ObsoleteCoroutinesApi</arg>
                     </args>
                 </configuration>
             </plugin>
@@ -182,7 +184,7 @@
             <plugin>
                 <groupId>com.github.spotbugs</groupId>
                 <artifactId>spotbugs-maven-plugin</artifactId>
-                <version>4.2.3</version>
+                <version>4.3.0</version>
                 <configuration>
                     <includeTests>true</includeTests>
                     <trace>true</trace>

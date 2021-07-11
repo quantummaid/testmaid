@@ -28,14 +28,8 @@
     </ignoreVersion>
   </ignoreVersions>
   <rules>
-    <rule groupId="org.jetbrains.kotlin" comparisonMethod="maven">
-      <ignoreVersions>
-        <ignoreVersion type="regex">1\.5\..*</ignoreVersion>
-      </ignoreVersions>
-    </rule>
     <rule groupId="org.jetbrains.kotlinx" comparisonMethod="maven">
       <ignoreVersions>
-        <ignoreVersion type="regex">1\.5\..*</ignoreVersion>
         <ignoreVersion type="regex">.*-native-mt</ignoreVersion>
       </ignoreVersions>
     </rule>
