@@ -19,9 +19,8 @@
  * under the License.
  */
 
-package de.quantummaid.testmaid.junit5;
+package de.quantummaid.testmaid.util
 
-@SuppressWarnings("java:S2094")
-public final class Dummy {
-    // in order to trigger javadoc
+fun Long.toIntExactIMeanWhoWantsToRiskAFuckingOverflow(): Int {
+    return Math.toIntExact(this)
 }

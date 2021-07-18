@@ -19,9 +19,20 @@
  * under the License.
  */
 
-package de.quantummaid.testmaid.junit5;
+package de.quantummaid.testmaid.cloudformationenv
 
-@SuppressWarnings("java:S2094")
-public final class Dummy {
-    // in order to trigger javadoc
+import de.quantummaid.testmaid.integrations.aws.cf.plain.api.StackDefinition
+import de.quantummaid.testmaid.localfs.Md5Sum
+import de.quantummaid.testmaid.localfs.Md5Sum.Companion.md5SumOf
+
+data class EnvironmentDefinition(
+    val name: EnvironmentName,
+    val stackDefinition: StackDefinition,
+    val lambdaCode: LambdaCode
+) {
+    fun md5Sum(): Md5Sum {
+        return md5SumOf(
+            name.md5Sum(), stackDefinition.md5Sum(), lambdaCode.md5Sum()
+        )
+    }
 }

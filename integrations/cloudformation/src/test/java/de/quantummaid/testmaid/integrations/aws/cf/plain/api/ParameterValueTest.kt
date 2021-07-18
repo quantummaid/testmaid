@@ -19,9 +19,15 @@
  * under the License.
  */
 
-package de.quantummaid.testmaid.junit5;
+package de.quantummaid.testmaid.integrations.aws.cf.plain.api
 
-@SuppressWarnings("java:S2094")
-public final class Dummy {
-    // in order to trigger javadoc
+import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Test
+
+internal class ParameterValueTest {
+    @Test
+    internal fun canBeCreated() {
+        assertEquals(ParameterValue("Th|\$ can b3 anything"), ParameterValue("Th|\$ can b3 anything"))
+        assertNotEquals(ParameterValue("Th|\$ can b3 anything"), ParameterValue("according to the docs..."))
+    }
 }

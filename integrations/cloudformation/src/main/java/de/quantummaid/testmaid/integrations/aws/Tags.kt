@@ -19,9 +19,15 @@
  * under the License.
  */
 
-package de.quantummaid.testmaid.junit5;
+package de.quantummaid.testmaid.integrations.aws
 
-@SuppressWarnings("java:S2094")
-public final class Dummy {
-    // in order to trigger javadoc
+import de.quantummaid.testmaid.localfs.Md5Sum
+import de.quantummaid.testmaid.localfs.Md5Sum.Companion.md5SumOf
+
+
+data class Tags(val tags: List<Pair<TagKey, TagValue>>) {
+    fun md5Sum(): Md5Sum {
+        val joinToString = tags.joinToString("") { it.first.mappingValue() + it.second.mappingValue() }
+        return md5SumOf(joinToString)
+    }
 }

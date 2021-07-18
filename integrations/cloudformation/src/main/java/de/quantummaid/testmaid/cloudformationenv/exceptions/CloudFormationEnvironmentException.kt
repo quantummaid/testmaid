@@ -19,9 +19,6 @@
  * under the License.
  */
 
-package de.quantummaid.testmaid.junit5;
+package de.quantummaid.testmaid.cloudformationenv.exceptions
 
-@SuppressWarnings("java:S2094")
-public final class Dummy {
-    // in order to trigger javadoc
-}
+abstract class CloudFormationEnvironmentException(message: String, cause: Throwable) : Exception(message, cause)

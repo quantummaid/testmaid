@@ -19,9 +19,24 @@
  * under the License.
  */
 
-package de.quantummaid.testmaid.junit5;
+package de.quantummaid.testmaid.integrations.aws.cf.plain.api
 
-@SuppressWarnings("java:S2094")
-public final class Dummy {
-    // in order to trigger javadoc
+import de.quantummaid.mapmaid.validatedtypeskotlin.ValidationException
+
+data class CreatedStack(
+    val stackName: StackName,
+    val stackId: StackId,
+    val outputs: Set<Pair<OutputName, OutputValue>>
+) {
+    init {
+        if (outputs.size > 200) {
+            throw ValidationException("must not contain more than 200 parameters")
+        }
+    }
+
+    operator fun get(outputName: OutputName): OutputValue {
+        return (outputs.singleOrNull { it.first == outputName } ?: throw UnsupportedOperationException(
+            "no '$outputName' in stack '$stackName'[${stackId}] (available outputs: ${outputs})"
+        )).second
+    }
 }

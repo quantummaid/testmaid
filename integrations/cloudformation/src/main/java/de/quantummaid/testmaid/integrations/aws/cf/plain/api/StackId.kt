@@ -19,9 +19,18 @@
  * under the License.
  */
 
-package de.quantummaid.testmaid.junit5;
+package de.quantummaid.testmaid.integrations.aws.cf.plain.api
 
-@SuppressWarnings("java:S2094")
-public final class Dummy {
-    // in order to trigger javadoc
+import de.quantummaid.mapmaid.validatedtypeskotlin.types.ValidatedString
+import de.quantummaid.mapmaid.validatedtypeskotlin.validation.StringValidator.Companion.allOf
+import de.quantummaid.mapmaid.validatedtypeskotlin.validation.StringValidator.Companion.length
+import de.quantummaid.mapmaid.validatedtypeskotlin.validation.StringValidator.Companion.regex
+
+/**
+ * arn:aws:cloudformation:eu-central-1:893583122930:stack/CloudFormationServiceImplTest-createStack/422c3a80-df73-11eb-bdd2-0ae8c75d2572
+ */
+class StackId(unsafe: String) : ValidatedString(validator, unsafe) {
+    companion object {
+        private val validator = allOf(length(1, 2048), regex("arn:aws:cloudformation:[a-zA-Z0-9-:/]+".toRegex()))
+    }
 }

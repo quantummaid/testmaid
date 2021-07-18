@@ -19,9 +19,23 @@
  * under the License.
  */
 
-package de.quantummaid.testmaid.junit5;
+package de.quantummaid.testmaid.integrations.aws.s3
 
-@SuppressWarnings("java:S2094")
-public final class Dummy {
-    // in order to trigger javadoc
+import software.amazon.awssdk.services.s3.S3Client
+import java.nio.file.Path
+
+
+interface LogFacade {
+    fun infoUploadingToS3(localFile: Path, bucketName: BucketName, objectKey: ObjectKey)
+    fun infoUploadedToS3(localFile: Path, bucketName: BucketName, objectKey: ObjectKey)
+}
+
+interface S3Service {
+    companion object {
+        fun s3Service(s3Client: S3Client, logFacade: LogFacade): S3Service {
+            return S3ServiceImpl(s3Client, logFacade)
+        }
+    }
+
+    fun upload(localFile: Path, bucketName: BucketName, objectKey: ObjectKey)
 }

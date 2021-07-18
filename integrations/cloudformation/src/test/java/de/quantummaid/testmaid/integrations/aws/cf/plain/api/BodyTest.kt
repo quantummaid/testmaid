@@ -19,9 +19,23 @@
  * under the License.
  */
 
-package de.quantummaid.testmaid.junit5;
+package de.quantummaid.testmaid.integrations.aws.cf.plain.api
 
-@SuppressWarnings("java:S2094")
-public final class Dummy {
-    // in order to trigger javadoc
+import de.quantummaid.testmaid.integrations.aws.cf.plain.TemplateFixtures
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotEquals
+import org.junit.jupiter.api.Test
+
+internal class BodyTest {
+    @Test
+    internal fun canBeCreated() {
+        assertEquals(Body(TemplateFixtures.EIP_V1), Body(TemplateFixtures.EIP_V1))
+        assertNotEquals(Body(TemplateFixtures.EIP_V1), Body(TemplateFixtures.EIP_V2))
+    }
+
+    @Test
+    internal fun md5Sum() {
+        assertEquals(Body(TemplateFixtures.EIP_V1).md5Sum(), Body(TemplateFixtures.EIP_V1).md5Sum())
+        assertNotEquals(Body(TemplateFixtures.EIP_V1).md5Sum(), Body(TemplateFixtures.EIP_V2).md5Sum())
+    }
 }

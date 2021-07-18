@@ -19,9 +19,19 @@
  * under the License.
  */
 
-package de.quantummaid.testmaid.junit5;
+package de.quantummaid.testmaid.cloudformationenv.internal
 
-@SuppressWarnings("java:S2094")
-public final class Dummy {
-    // in order to trigger javadoc
+import de.quantummaid.testmaid.integrations.aws.Tags
+import de.quantummaid.testmaid.integrations.aws.cf.plain.api.StackName
+import software.amazon.awssdk.services.cloudformation.model.Capability
+
+class DeployStackFailed(
+    s: String,
+    stackName: StackName,
+    stackParameters: Map<String, String>,
+    tags: Tags,
+    capabilities: Set<Capability>,
+    e: Exception
+) : Throwable() {
+
 }

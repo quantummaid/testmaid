@@ -19,9 +19,10 @@
  * under the License.
  */
 
-package de.quantummaid.testmaid.junit5;
+package de.quantummaid.testmaid.cloudformationenv
 
-@SuppressWarnings("java:S2094")
-public final class Dummy {
-    // in order to trigger javadoc
+data class Environment(
+    val definition: EnvironmentDefinition
+) {
+
 }

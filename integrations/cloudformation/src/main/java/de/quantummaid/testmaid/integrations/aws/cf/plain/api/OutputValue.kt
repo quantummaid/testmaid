@@ -19,9 +19,13 @@
  * under the License.
  */
 
-package de.quantummaid.testmaid.junit5;
+package de.quantummaid.testmaid.integrations.aws.cf.plain.api
 
-@SuppressWarnings("java:S2094")
-public final class Dummy {
-    // in order to trigger javadoc
+import de.quantummaid.mapmaid.validatedtypeskotlin.types.ValidatedString
+import de.quantummaid.mapmaid.validatedtypeskotlin.validation.StringValidator
+
+class OutputValue(unsafe: String) : ValidatedString(validator, unsafe) {
+    companion object {
+        private val validator = StringValidator.allOf(StringValidator.length(1, 2048))
+    }
 }

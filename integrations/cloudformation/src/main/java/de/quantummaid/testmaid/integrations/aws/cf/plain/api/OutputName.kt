@@ -19,9 +19,18 @@
  * under the License.
  */
 
-package de.quantummaid.testmaid.junit5;
+package de.quantummaid.testmaid.integrations.aws.cf.plain.api
 
-@SuppressWarnings("java:S2094")
-public final class Dummy {
-    // in order to trigger javadoc
+import de.quantummaid.mapmaid.validatedtypeskotlin.types.ValidatedString
+import de.quantummaid.mapmaid.validatedtypeskotlin.validation.StringValidator.Companion.allOf
+import de.quantummaid.mapmaid.validatedtypeskotlin.validation.StringValidator.Companion.length
+import de.quantummaid.mapmaid.validatedtypeskotlin.validation.StringValidator.Companion.regex
+
+/**
+ * https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cloudformation-limits.html
+ */
+class OutputName(unsafe: String) : ValidatedString(validator, unsafe) {
+    companion object {
+        private val validator = allOf(length(1, 255), regex("[0-9a-zA-Z.]+".toRegex()))
+    }
 }

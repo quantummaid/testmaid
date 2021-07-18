@@ -2,6 +2,7 @@
 <project version="4">
   <component name="Encoding">
     <file url="file://$PROJECT_DIR$/core/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/integrations/cloudformation/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/integrations/junit5/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/tests/src/main/java" charset="UTF-8" />
   </component>

@@ -19,9 +19,25 @@
  * under the License.
  */
 
-package de.quantummaid.testmaid.junit5;
+package de.quantummaid.testmaid.aws.cf.internal
 
-@SuppressWarnings("java:S2094")
-public final class Dummy {
-    // in order to trigger javadoc
+import de.quantummaid.testmaid.integrations.aws.cf.plain.api.StackDefinition
+import de.quantummaid.testmaid.integrations.aws.cf.plain.impl.SimpleResourceStatus
+import software.amazon.awssdk.services.cloudformation.model.Stack
+
+interface RCALogFacade {
+    fun errorCreateStackFailed(
+        stack: Stack,
+        stackDefinition: StackDefinition,
+        failedResources: List<SimpleResourceStatus.Failed>
+    )
+
+    fun errorUpdateStackFailed(
+        stack: Stack,
+        stackDefinition: StackDefinition,
+        failedResources: List<SimpleResourceStatus.Failed>
+    )
+
+    fun errorDeleteStackFailed(stack: Stack, failedResources: List<SimpleResourceStatus.Failed>)
+
 }

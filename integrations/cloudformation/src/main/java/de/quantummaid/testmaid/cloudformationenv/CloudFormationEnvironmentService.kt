@@ -19,9 +19,19 @@
  * under the License.
  */
 
-package de.quantummaid.testmaid.junit5;
+package de.quantummaid.testmaid.cloudformationenv
 
-@SuppressWarnings("java:S2094")
-public final class Dummy {
-    // in order to trigger javadoc
+import software.amazon.awssdk.services.cloudformation.model.Capability
+
+/**
+ * Things to implement later:
+ * DisableRollback
+ * OnFailure
+ */
+interface CloudFormationEnvironmentService {
+
+
+    fun createOrUpdate(environmentDefinition: EnvironmentDefinition): Environment
+
+    fun delete(environmentDefinition: EnvironmentDefinition)
 }

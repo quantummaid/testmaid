@@ -19,9 +19,16 @@
  * under the License.
  */
 
-package de.quantummaid.testmaid.junit5;
+package de.quantummaid.testmaid.integrations.aws.cf.plain.api
 
-@SuppressWarnings("java:S2094")
-public final class Dummy {
-    // in order to trigger javadoc
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotEquals
+import org.junit.jupiter.api.Test
+
+internal class OutputNameTest {
+    @Test
+    internal fun canBeCreated() {
+        assertEquals(OutputName("dynamoDb.users.tableName"), OutputName("dynamoDb.users.tableName"))
+        assertNotEquals(OutputName("dynamoDb.warez.tableName"), OutputName("dynamoDb.users.tableName"))
+    }
 }

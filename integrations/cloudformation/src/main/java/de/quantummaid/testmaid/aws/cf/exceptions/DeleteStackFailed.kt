@@ -19,9 +19,10 @@
  * under the License.
  */
 
-package de.quantummaid.testmaid.junit5;
+package de.quantummaid.testmaid.aws.cf.exceptions
 
-@SuppressWarnings("java:S2094")
-public final class Dummy {
-    // in order to trigger javadoc
-}
+import software.amazon.awssdk.services.cloudformation.model.Stack
+
+class DeleteStackFailed(val stack: Stack) : Exception(
+    "Failed to delete stack of definition ${stack}"
+)

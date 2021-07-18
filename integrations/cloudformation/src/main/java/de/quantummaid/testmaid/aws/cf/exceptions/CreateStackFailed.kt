@@ -19,9 +19,11 @@
  * under the License.
  */
 
-package de.quantummaid.testmaid.junit5;
+package de.quantummaid.testmaid.aws.cf.exceptions
 
-@SuppressWarnings("java:S2094")
-public final class Dummy {
-    // in order to trigger javadoc
-}
+import de.quantummaid.testmaid.integrations.aws.cf.plain.api.StackDefinition
+import software.amazon.awssdk.services.cloudformation.model.Stack
+
+class CreateStackFailed(val stackDefinition: StackDefinition, val stack: Stack) : Exception(
+    "Failed to create stack of definition ${stackDefinition}. Actual SDK stack is: ${stack}"
+)

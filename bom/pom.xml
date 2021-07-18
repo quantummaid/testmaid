@@ -53,6 +53,11 @@
                 <artifactId>testmaid-junit5</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>de.quantummaid.testmaid.integrations</groupId>
+                <artifactId>testmaid-cloudformation</artifactId>
+                <version>${project.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 </project>

@@ -19,9 +19,17 @@
  * under the License.
  */
 
-package de.quantummaid.testmaid.junit5;
+package de.quantummaid.testmaid.integrations.aws.cf.plain.api
 
-@SuppressWarnings("java:S2094")
-public final class Dummy {
-    // in order to trigger javadoc
+import kotlin.time.Duration
+
+interface CloudFormationServiceLogFacade {
+    fun infoCreatingStack(stackDefinition: StackDefinition, timeout: Duration)
+    fun infoCreatedStack(createdStack: CreatedStack, timeout: Duration)
+
+    fun infoUpdatingStack(stackDefinition: StackDefinition, timeout: Duration)
+    fun infoUpdatedStack(createdStack: CreatedStack, timeout: Duration)
+
+    fun infoDeletingStack(stackId: StackId, stackName: StackName, timeout: Duration)
+    fun infoDeletedStack(stackId: StackId, stackName: StackName, timeout: Duration)
 }

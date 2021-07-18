@@ -19,9 +19,24 @@
  * under the License.
  */
 
-package de.quantummaid.testmaid.junit5;
+package de.quantummaid.testmaid.cloudformationenv
 
-@SuppressWarnings("java:S2094")
-public final class Dummy {
-    // in order to trigger javadoc
+import de.quantummaid.mapmaid.validatedtypeskotlin.types.ValidatedString
+import de.quantummaid.mapmaid.validatedtypeskotlin.validation.StringValidator.Companion.allOf
+import de.quantummaid.mapmaid.validatedtypeskotlin.validation.StringValidator.Companion.length
+import de.quantummaid.mapmaid.validatedtypeskotlin.validation.StringValidator.Companion.regex
+import de.quantummaid.testmaid.localfs.Md5Sum
+import de.quantummaid.testmaid.localfs.Md5Sum.Companion.md5SumOf
+
+/**
+ * Same restrictions as a StackName, since it's used as StackName
+ */
+class EnvironmentName(unsafe: String) : ValidatedString(validator, unsafe) {
+    companion object {
+        private val validator = allOf(length(1, 128), regex("[a-zA-Z][a-zA-Z0-9-]*".toRegex()))
+    }
+
+    fun md5Sum(): Md5Sum {
+        return md5SumOf(mappingValue())
+    }
 }

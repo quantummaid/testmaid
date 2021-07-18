@@ -1,5 +1,5 @@
 <component name="CopyrightManager">
-  <settings>
+  <settings default="QuantumMaid">
     <module2copyright>
       <element module="All" copyright="QuantumMaid" />
     </module2copyright>

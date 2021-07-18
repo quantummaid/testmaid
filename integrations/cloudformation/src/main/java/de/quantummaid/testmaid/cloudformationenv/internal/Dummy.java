@@ -19,7 +19,7 @@
  * under the License.
  */
 
-package de.quantummaid.testmaid.junit5;
+package de.quantummaid.testmaid.cloudformationenv.internal;
 
 @SuppressWarnings("java:S2094")
 public final class Dummy {

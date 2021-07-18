@@ -19,9 +19,19 @@
  * under the License.
  */
 
-package de.quantummaid.testmaid.junit5;
+package de.quantummaid.testmaid.integrations.aws.cf.plain
 
-@SuppressWarnings("java:S2094")
-public final class Dummy {
-    // in order to trigger javadoc
+import org.junit.jupiter.api.Test
+import software.amazon.awssdk.services.cloudformation.CloudFormationClient
+
+internal class TemplateFixturesTest {
+    @Test
+    internal fun testEIP_V1() {
+        CloudFormationClient.create().use { it.validateTemplate { builder -> builder.templateBody(TemplateFixtures.EIP_V1) } }
+    }
+
+    @Test
+    internal fun testEIP_V2() {
+        CloudFormationClient.create().use { it.validateTemplate { builder -> builder.templateBody(TemplateFixtures.EIP_V2) } }
+    }
 }
