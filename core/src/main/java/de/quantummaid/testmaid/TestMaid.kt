@@ -45,7 +45,7 @@ interface TestMaid : AutoCloseable {
                 .closeOnJvmShutdown()
                 .withScope(TestSuiteScope::class.java) { testSuiteInjectMaid ->
                     testSuiteInjectMaid.withScope(TestClassScope::class.java) { testClassInjectMaid ->
-                        testClassInjectMaid.withScope(TestCaseScope::class.java) { testCaseInjectMaid ->
+                        testClassInjectMaid.withScope(TestCaseScope::class.java) {
                         }
                     }
                 }
