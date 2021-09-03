@@ -35,4 +35,6 @@ interface TestMaidIntegrationApi {
 
     fun registerTestClass(testClassData: TestClassData): ExecutionDecision
     fun registerTestCase(testCaseData: TestCaseData): ExecutionDecision
+
+
 }

@@ -27,20 +27,15 @@ import de.quantummaid.testmaid.integrations.aws.TagValue
 import de.quantummaid.testmaid.integrations.aws.Tags
 import de.quantummaid.testmaid.integrations.aws.cf.plain.TemplateFixtures
 import de.quantummaid.testmaid.integrations.aws.cf.plain.api.*
-import de.quantummaid.testmaid.integrations.aws.cf.plain.impl.CloudFormationServiceImpl
-import de.quantummaid.testmaid.integrations.aws.cf.plain.impl.StubLogFacade
+import de.quantummaid.testmaid.integrations.aws.support.AwsEndToEndTest
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import software.amazon.awssdk.services.cloudformation.CloudFormationClient
 
+@AwsEndToEndTest
 internal class CloudFormationServiceImplTest {
 
     @Test
-    fun testCreateUpdateDelete() {
-        val client = CloudFormationClient.create()
-        val stubLogFacade = StubLogFacade(true)
-        val serviceImpl = CloudFormationServiceImpl(client, stubLogFacade)
-        val sut = CloudFormationServiceRCAWrapper(serviceImpl, client, stubLogFacade)
+    fun testCreateUpdateDelete(sut: CloudFormationService) {
         val stackName = StackName("CloudFormationServiceImplTest-updateStack")
         try {
             sut.deleteStack(stackName)

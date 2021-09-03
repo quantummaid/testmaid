@@ -22,15 +22,27 @@
 package de.quantummaid.testmaid.integrations.aws.support
 
 import de.quantummaid.injectmaid.InjectMaid
-import de.quantummaid.injectmaid.api.InjectorConfiguration
-import org.junit.jupiter.api.extension.ExtendWith
-import kotlin.reflect.KClass
+import de.quantummaid.injectmaid.api.ReusePolicy
+import de.quantummaid.testmaid.TestMaid
+import de.quantummaid.testmaid.integrations.aws.cf.plain.api.CloudFormationService
+import de.quantummaid.testmaid.integrations.aws.cf.plain.api.CloudFormationServiceIC
+import de.quantummaid.testmaid.integrations.aws.cf.plain.api.StackNameBuilder
+import de.quantummaid.testmaid.integrations.aws.cf.plain.api.StackPrefix
 import de.quantummaid.testmaid.junit5.TestMaidJunit5Adapter
+import de.quantummaid.testmaid.model.TimeoutSettings
+import de.quantummaid.testmaid.model.testcase.TestCaseData
+import de.quantummaid.testmaid.model.testcase.TestCaseScope
+import de.quantummaid.testmaid.util.AutoCleanedCoroutineScope
+import de.quantummaid.testmaid.util.AutoCleanupStackPrefix
+import de.quantummaid.testmaid.withinTestCaseScope
+import org.junit.jupiter.api.extension.ExtendWith
+import software.amazon.awssdk.services.cloudformation.CloudFormationClient
+import kotlin.time.Duration.Companion.minutes
 
 @Retention(AnnotationRetention.RUNTIME)
 @Target(AnnotationTarget.CLASS)
 @ExtendWith(AwsEndToEndTestSupport::class)
-annotation class AwsEndToEndTest(vararg val injectorConfigurations: KClass<out InjectorConfiguration>)
+annotation class AwsEndToEndTest
 
 
 private class AwsEndToEndTestSupport : TestMaidJunit5Adapter(testMaid) {
@@ -39,11 +51,53 @@ private class AwsEndToEndTestSupport : TestMaidJunit5Adapter(testMaid) {
 
         fun testMaid(): TestMaid {
             val injectMaidBuilder = InjectMaid.anInjectMaid()
-                .withLifecycleManagement()
-                .closeOnJvmShutdown()
-                .withConfiguration(InMemoryConfiguration())
-            val skipDecider = DomainTestSkipDecider()
-            return TestMaid.buildTestMaid(injectMaidBuilder, skipDecider)
+                    .withLifecycleManagement()
+                    .closeOnJvmShutdown()
+                    .withCustomType(
+                            CloudFormationClient::class.java,
+                            { CloudFormationClient.builder().build() },
+                            ReusePolicy.DEFAULT_SINGLETON
+                    )
+                    .withCustomType(StackNameBuilder::class.java, {
+                        val runtimeId = System.getenv("RuntimeId")!!
+                        StackNameBuilder(StackPrefix("testmaid-aws"), StackPrefix(runtimeId))
+                    }, ReusePolicy.DEFAULT_SINGLETON)
+                    .withCustomType(LogToStdOut::class.java, {
+                        val envVariableValue: String = System.getenv("LogToStdOut") ?: ""
+                        val enabled = envVariableValue != "disabled"
+                        if (!enabled) {
+                            println("( •̀ᴗ•́ )و ̑̑ - Log to stdout disable as per your request")
+                        }
+                        LogToStdOut(enabled)
+                    }, ReusePolicy.DEFAULT_SINGLETON)
+                    .withConfiguration(CloudFormationServiceIC())
+                    .withType(AutoCleanedCoroutineScope::class.java)
+                    .withinTestCaseScope {
+                        withCustomType(
+                                AutoCleanupStackPrefix::class.java,
+                                StackNameBuilder::class.java,
+                                TestCaseData::class.java,
+                                CloudFormationService::class.java,
+                                { stackNameBuilder, testCaseData, cloudFormationService ->
+                                    AutoCleanupStackPrefix(stackNameBuilder, testCaseData, cloudFormationService)
+                                }, ReusePolicy.PROTOTYPE
+                        )
+                        withCustomType(
+                                AutoCleanupStackName::class.java,
+                                TestCaseScope::class.java, StackNameBuilder::class.java, CloudFormationClient::class.java,
+                                { scope, stackNameBuilder, client ->
+                                    val stackName = stackNameBuilder.uniqueForTestCase(scope.testCaseData.name)
+                                    AutoCleanupStackName(stackName, client)
+                                }, ReusePolicy.PROTOTYPE
+                        )
+                    }
+            return TestMaid.buildTestMaid(
+                    injectMaidBuilder,
+                    timeoutSettings = TimeoutSettings(
+                            createTestParameterTimeout = minutes(5),
+                            cleanupTestParametersTimeout = minutes(5),
+                    )
+            )
         }
     }
 }

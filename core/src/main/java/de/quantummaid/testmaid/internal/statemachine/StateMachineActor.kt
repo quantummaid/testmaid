@@ -24,13 +24,16 @@ package de.quantummaid.testmaid.internal.statemachine
 import de.quantummaid.reflectmaid.actors.Actor
 import de.quantummaid.reflectmaid.actors.ActorBuilder
 import de.quantummaid.reflectmaid.actors.ActorPool
-import kotlin.time.seconds
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 object CloseMessage
 
 internal class StateMachineActor<StateSuperClass : Any, MessageSuperClass : Any> private constructor(
     private val stateMachine: StateMachine<StateSuperClass, MessageSuperClass>,
     private val actor: Actor<StateMachine<StateSuperClass, MessageSuperClass>, Any>,
+    val name: String,
 ) : AutoCloseable {
 
     companion object {
@@ -46,13 +49,21 @@ internal class StateMachineActor<StateSuperClass : Any, MessageSuperClass : Any>
                     .closeOn<CloseMessage>()
                     .withInitialState(stateMachine)
                     .launch()
-            return StateMachineActor(stateMachine, actor)
+            return StateMachineActor(stateMachine, actor, name)
         }
     }
 
-    fun signalAwaitingSuccess(msg: MessageSuperClass) {
+    fun signalAwaitingSuccess(
+        msg: MessageSuperClass,
+        timeout: Duration = seconds(10),
+        exceptionWrapperFactory: (AwaitingSuccessMessageTimeoutException) -> Throwable = { it }
+    ) {
         val stateMachineMessage = StateMachineMessage(msg)
-        actor.signalAwaitingSuccess(stateMachineMessage, 10.seconds)
+        try {
+            actor.signalAwaitingSuccess(stateMachineMessage, timeout)
+        } catch (e: TimeoutCancellationException) {
+            throw exceptionWrapperFactory(AwaitingSuccessMessageTimeoutException(actor.name, msg, timeout, e))
+        }
     }
 
     fun isActive(): Boolean {

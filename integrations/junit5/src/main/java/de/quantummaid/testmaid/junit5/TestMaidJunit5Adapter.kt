@@ -94,11 +94,14 @@ abstract class TestMaidJunit5Adapter(val testMaid: TestMaid) :
 
     override fun beforeAll(context: ExtensionContext) {
         lock.lock()
-        if (!started) {
-            started = true;
-            context.root.getStore(GLOBAL).put("afterAllHook", this);
+        try {
+            if (!started) {
+                started = true;
+                context.root.getStore(GLOBAL).put("afterAllHook", this);
+            }
+        } finally {
+            lock.unlock()
         }
-        lock.unlock()
         val testClassData = context.getFromMyStore(context.uniqueId, TestClassData::class.java)
         testMaid.integrationApi.testClassStart(testClassData)
     }

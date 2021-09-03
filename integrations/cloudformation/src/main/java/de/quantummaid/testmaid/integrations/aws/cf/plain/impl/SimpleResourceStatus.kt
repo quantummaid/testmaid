@@ -23,13 +23,14 @@ package de.quantummaid.testmaid.integrations.aws.cf.plain.impl
 
 import software.amazon.awssdk.services.cloudformation.model.ResourceStatus
 import software.amazon.awssdk.services.cloudformation.model.StackResource
+import software.amazon.awssdk.services.cloudformation.model.StackStatus
 
 class ResourceIntel(
-    val logicalId: String,
-    val type: String,
-    val status: String,
-    val reason: String?,
-    val physicalId: String?
+        val logicalId: String,
+        val type: String,
+        val status: String,
+        val reason: String?,
+        val physicalId: String?
 ) {
     override fun toString(): String {
         return "$type[$logicalId]_[$status]:'$reason'(${physicalId ?: "No physical id"})"
@@ -42,13 +43,37 @@ sealed class SimpleResourceStatus(val intel: ResourceIntel) {
     }
 
     companion object {
+        fun notDeletedSdkStates(): List<StackStatus> {
+            return listOf(
+                    StackStatus.CREATE_IN_PROGRESS,
+                    StackStatus.CREATE_FAILED,
+                    StackStatus.CREATE_COMPLETE,
+                    StackStatus.DELETE_FAILED,
+                    StackStatus.UPDATE_IN_PROGRESS,
+                    StackStatus.UPDATE_COMPLETE,
+                    StackStatus.UPDATE_COMPLETE_CLEANUP_IN_PROGRESS,
+                    StackStatus.UPDATE_ROLLBACK_COMPLETE,
+                    StackStatus.UPDATE_ROLLBACK_COMPLETE_CLEANUP_IN_PROGRESS,
+                    StackStatus.UPDATE_ROLLBACK_FAILED,
+                    StackStatus.UPDATE_ROLLBACK_IN_PROGRESS,
+                    StackStatus.IMPORT_COMPLETE,
+                    StackStatus.IMPORT_IN_PROGRESS,
+                    StackStatus.IMPORT_ROLLBACK_COMPLETE,
+                    StackStatus.IMPORT_ROLLBACK_IN_PROGRESS,
+                    StackStatus.IMPORT_ROLLBACK_FAILED,
+                    StackStatus.ROLLBACK_COMPLETE,
+                    StackStatus.ROLLBACK_FAILED,
+                    StackStatus.ROLLBACK_IN_PROGRESS,
+            )
+        }
+
         fun fromSdkResource(stackResource: StackResource): SimpleResourceStatus {
             val intel = ResourceIntel(
-                stackResource.logicalResourceId(),
-                stackResource.resourceType(),
-                stackResource.resourceStatusAsString(),
-                stackResource.resourceStatusReason(),
-                stackResource.physicalResourceId(),
+                    stackResource.logicalResourceId(),
+                    stackResource.resourceType(),
+                    stackResource.resourceStatusAsString(),
+                    stackResource.resourceStatusReason(),
+                    stackResource.physicalResourceId(),
             )
             return when (val resourceStatus: ResourceStatus = stackResource.resourceStatus()) {
                 ResourceStatus.CREATE_IN_PROGRESS -> InProgress(intel)

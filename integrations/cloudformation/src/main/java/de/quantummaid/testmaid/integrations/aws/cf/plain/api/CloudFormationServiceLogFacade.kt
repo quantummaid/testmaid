@@ -24,11 +24,12 @@ package de.quantummaid.testmaid.integrations.aws.cf.plain.api
 import kotlin.time.Duration
 
 interface CloudFormationServiceLogFacade {
+
     fun infoCreatingStack(stackDefinition: StackDefinition, timeout: Duration)
-    fun infoCreatedStack(createdStack: CreatedStack, timeout: Duration)
+    fun infoCreatedStack(detailedStackInformation: DetailedStackInformation, timeout: Duration)
 
     fun infoUpdatingStack(stackDefinition: StackDefinition, timeout: Duration)
-    fun infoUpdatedStack(createdStack: CreatedStack, timeout: Duration)
+    fun infoUpdatedStack(detailedStackInformation: DetailedStackInformation, timeout: Duration)
 
     fun infoDeletingStack(stackId: StackId, stackName: StackName, timeout: Duration)
     fun infoDeletedStack(stackId: StackId, stackName: StackName, timeout: Duration)

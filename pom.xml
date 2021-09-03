@@ -32,7 +32,7 @@
 
     <groupId>de.quantummaid.testmaid</groupId>
     <artifactId>testmaid-parent</artifactId>
-    <version>0.0.3</version>
+    <version>0.0.4</version>
     <packaging>pom</packaging>
 
     <name>TestMaid</name>
@@ -100,6 +100,31 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+            <dependency>
+                <groupId>de.quantummaid.mapmaid</groupId>
+                <artifactId>core</artifactId>
+                <version>0.10.19</version>
+            </dependency>
+            <dependency>
+                <groupId>de.quantummaid.mapmaid.integrations</groupId>
+                <artifactId>mapmaid-standardtypes-kotlin</artifactId>
+                <version>0.10.19</version>
+            </dependency>
+            <dependency>
+                <groupId>de.quantummaid.mapmaid.integrations</groupId>
+                <artifactId>mapmaid-validatedtypes-kotlin</artifactId>
+                <version>0.10.19</version>
+            </dependency>
+            <dependency>
+                <groupId>de.quantummaid.mapmaid.integrations</groupId>
+                <artifactId>mapmaid-dynamodb</artifactId>
+                <version>0.10.19</version>
+            </dependency>
+            <dependency>
+                <groupId>de.quantummaid.mapmaid.integrations</groupId>
+                <artifactId>mapmaid-minimal-json</artifactId>
+                <version>0.10.19</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -127,7 +152,7 @@
                 </executions>
                 <configuration>
                     <javaParameters>true</javaParameters>
-                    <jvmTarget>1.8</jvmTarget>
+                    <jvmTarget>11</jvmTarget>
                     <args>
                         <arg>-Xopt-in=kotlinx.coroutines.ObsoleteCoroutinesApi</arg>
                         <arg>-Xopt-in=kotlin.time.ExperimentalTime</arg>

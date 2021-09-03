@@ -21,38 +21,28 @@
 
 package de.quantummaid.testmaid.integrations.aws.cf.plain.api
 
-import de.quantummaid.testmaid.integrations.aws.cf.plain.impl.CloudFormationServiceImpl
-import de.quantummaid.testmaid.util.TimeoutPoller
-import software.amazon.awssdk.services.cloudformation.CloudFormationClient
+import kotlinx.coroutines.CompletableDeferred
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 
 interface CloudFormationService {
     companion object {
-        val default = minutes(10)
-
-        fun cloudFormationService(
-            client: CloudFormationClient,
-            logFacade: CloudFormationServiceLogFacade,
-            timeoutPoller: TimeoutPoller = TimeoutPoller()
-        ): CloudFormationService {
-            return CloudFormationServiceImpl(client, logFacade, timeoutPoller)
-        }
+        val defaultTimeout = minutes(10)
     }
 
-    fun createStack(stackDefinition: StackDefinition, timeout: Duration = default): CreatedStack
+    fun listStacksWithPrefix(stackPrefix: StackPrefix): List<StackReference>
 
-    fun updateStack(stackDefinition: StackDefinition, timeout: Duration = default): CreatedStack
+    fun createStack(stackDefinition: StackDefinition, timeout: Duration = defaultTimeout): DetailedStackInformation
 
-    /**
-     * When deleting a stack it will become invisible to describeStacks() when filtered by StackName.
-     * Using stackId solves this issue. Hence providing the stackId will most likely improve performance.
-     */
-    fun deleteStack(stackName: StackName, timeout: Duration = default)
+    fun updateStack(stackDefinition: StackDefinition, timeout: Duration = defaultTimeout): DetailedStackInformation
 
     /**
      * When deleting a stack it will become invisible to describeStacks() when filtered by StackName.
      * Using stackId solves this issue. Hence providing the stackId will most likely improve performance.
      */
-    fun deleteStack(stackId: StackId, stackName: StackName, timeout: Duration = default)
+    fun deleteStack(stackName: StackName, timeout: Duration = defaultTimeout)
+
+    fun deleteStack(stackId: StackId, stackName: StackName, timeout: Duration = defaultTimeout)
+
+    fun deleteStackAsync(stackId: StackId, stackName: StackName, timeout: Duration = defaultTimeout): CompletableDeferred<Unit>
 }

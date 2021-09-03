@@ -23,15 +23,21 @@ package de.quantummaid.testmaid.internal.testcase
 
 import de.quantummaid.injectmaid.api.Injector
 import de.quantummaid.testmaid.internal.statemachine.StateMachineActor
+import de.quantummaid.testmaid.model.CleanupTestParameterTimeout
+import de.quantummaid.testmaid.model.CreateTestParameterTimeout
+import de.quantummaid.testmaid.model.TimeoutSettings
 import de.quantummaid.testmaid.model.testcase.TestCase
 import de.quantummaid.testmaid.model.testcase.TestCaseData
 import kotlinx.coroutines.runBlocking
 
-internal class TestCaseActor private constructor(internal val delegate: StateMachineActor<TestCaseState, TestCaseMessage>) :
+internal class TestCaseActor private constructor(
+    internal val delegate: StateMachineActor<TestCaseState, TestCaseMessage>,
+    private val timeoutSettings: TimeoutSettings
+) :
     TestCase {
     companion object {
-        fun aTestCaseActor(): TestCaseActor {
-            return TestCaseActor(testCaseStateMachine())
+        fun aTestCaseActor(timeoutSettings: TimeoutSettings): TestCaseActor {
+            return TestCaseActor(testCaseStateMachine(), timeoutSettings)
         }
     }
 
@@ -57,7 +63,9 @@ internal class TestCaseActor private constructor(internal val delegate: StateMac
     }
 
     override fun postpare() {
-        delegate.signalAwaitingSuccess(PostpareTestCase)
+        delegate.signalAwaitingSuccess(PostpareTestCase, timeoutSettings.cleanupTestParametersTimeout) {
+            CleanupTestParameterTimeout(delegate.name, it)
+        }
     }
 
     override fun canProvideDependency(dependencyType: Class<*>): Boolean {
@@ -68,7 +76,9 @@ internal class TestCaseActor private constructor(internal val delegate: StateMac
 
     override fun resolveDependency(dependencyType: Class<*>): Any {
         val msg = ResolveParameter(dependencyType)
-        delegate.signalAwaitingSuccess(msg)
+        delegate.signalAwaitingSuccess(msg, timeoutSettings.createTestParameterTimeout) {
+            CreateTestParameterTimeout(delegate.name, dependencyType, it)
+        }
         return runBlocking { msg.result.await() }
     }
 }

@@ -28,10 +28,12 @@ import de.quantummaid.testmaid.ExecutionDecision
 import de.quantummaid.testmaid.SkipDecider
 import de.quantummaid.testmaid.TestMaid
 import de.quantummaid.testmaid.junit5.TestMaidJunit5Adapter
+import de.quantummaid.testmaid.model.TimeoutSettings
 import de.quantummaid.testmaid.model.testcase.TestCaseData
 import de.quantummaid.testmaid.model.testclass.TestClassData
 import org.junit.jupiter.api.extension.ExtendWith
 import kotlin.reflect.KClass
+import kotlin.time.Duration.Companion.seconds
 
 @Retention(AnnotationRetention.RUNTIME)
 @Target(AnnotationTarget.CLASS)
@@ -66,7 +68,14 @@ private class DomainTestSupport : TestMaidJunit5Adapter(testMaid) {
                 .closeOnJvmShutdown()
                 .withConfiguration(InMemoryConfiguration())
             val skipDecider = DomainTestSkipDecider()
-            return TestMaid.buildTestMaid(injectMaidBuilder, skipDecider)
+            return TestMaid.buildTestMaid(
+                injectMaidBuilder,
+                skipDecider,
+                TimeoutSettings(
+                    createTestParameterTimeout = seconds(2),
+                    cleanupTestParametersTimeout = seconds(2)
+                )
+            )
         }
     }
 }

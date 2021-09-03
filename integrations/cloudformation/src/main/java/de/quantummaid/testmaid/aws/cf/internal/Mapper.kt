@@ -28,10 +28,6 @@ import kotlin.time.Duration
 
 internal class Mapper {
     companion object {
-//        val mapMaid = MapMaid.aMapMaid()
-//            .serializingAndDeserializing(StackDefinition::class.java)
-//            .build()
-
         val UPDATE_FAILURE_STATES = setOf(
             StackStatus.UPDATE_ROLLBACK_COMPLETE,
             StackStatus.UPDATE_ROLLBACK_COMPLETE_CLEANUP_IN_PROGRESS,
@@ -73,7 +69,7 @@ internal class Mapper {
                 .build()
         }
 
-        fun mapToCreatedStack(sdkStack: Stack): CreatedStack {
+        fun mapToCreatedStack(sdkStack: Stack): DetailedStackInformation {
             val outputs = sdkStack.outputs().map {
                 val outputName = OutputName(it.outputKey())
                 val outputValue = OutputValue(it.outputValue())
@@ -81,7 +77,7 @@ internal class Mapper {
             }.toSet()
             val stackName = StackName(sdkStack.stackName())
             val stackId = StackId(sdkStack.stackId())
-            return CreatedStack(stackName, stackId, outputs)
+            return DetailedStackInformation(stackName, stackId, outputs)
         }
 
         fun isStackNotFoundException(e: CloudFormationException): Boolean {
@@ -102,5 +98,11 @@ internal class Mapper {
                     .parameterValue(it.second.mappingValue())
                     .build()
             }
+
+        fun mapToCreatedStack(stackSummary: StackSummary): StackReference {
+            val stackName = StackName(stackSummary.stackName())
+            val stackId = StackId(stackSummary.stackId())
+            return StackReference(stackId, stackName)
+        }
     }
 }

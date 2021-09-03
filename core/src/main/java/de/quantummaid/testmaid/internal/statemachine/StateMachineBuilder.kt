@@ -27,7 +27,7 @@ import kotlin.reflect.KClass
 
 internal class StateMachineBuilder<StateSuperClass : Any, MessageSuperClass : Any>(private val name: String) {
     companion object {
-        val actorPool = ActorPool(ActorPool.fixedThreadPoolDispatcher(3, "TestMaidActorPool"))
+        val actorPool = ActorPool(ActorPool.fixedThreadPoolDispatcher(10, "TestMaidActorPool"))
 
         fun <StateSuperClass : Any, MessageSuperClass : Any> aStateMachineUsing(
             name: String

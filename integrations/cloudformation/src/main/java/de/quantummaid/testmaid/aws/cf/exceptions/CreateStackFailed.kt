@@ -24,6 +24,9 @@ package de.quantummaid.testmaid.aws.cf.exceptions
 import de.quantummaid.testmaid.integrations.aws.cf.plain.api.StackDefinition
 import software.amazon.awssdk.services.cloudformation.model.Stack
 
-class CreateStackFailed(val stackDefinition: StackDefinition, val stack: Stack) : Exception(
-    "Failed to create stack of definition ${stackDefinition}. Actual SDK stack is: ${stack}"
+class CreateStackFailed(val stackDefinition: StackDefinition, val stack: Stack, failedResources: List<String>) : Exception(
+        "Failed to create stack. Status: ${stack.stackStatusAsString()}(${stack.stackStatusReason()}), " +
+                "Definition ${stackDefinition}. Actual SDK stack is: ${stack}\n" +
+                "Failed resources:\n" +
+                failedResources.joinToString("\n")
 )

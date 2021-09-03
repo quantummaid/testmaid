@@ -23,47 +23,78 @@ package de.quantummaid.testmaid.integrations.aws.cf.plain.api
 
 import de.quantummaid.testmaid.integrations.aws.cf.plain.TemplateFixtures
 import de.quantummaid.testmaid.integrations.aws.cf.plain.api.Parameters.Companion.parameters
-import de.quantummaid.testmaid.integrations.aws.cf.plain.impl.StubLogFacade
+import de.quantummaid.testmaid.util.AutoCleanedCoroutineScope
+import de.quantummaid.testmaid.integrations.aws.support.AutoCleanupStackName
+import de.quantummaid.testmaid.integrations.aws.support.AwsEndToEndTest
+import de.quantummaid.testmaid.util.AutoCleanupStackPrefix
+import kotlinx.coroutines.*
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import software.amazon.awssdk.services.cloudformation.CloudFormationClient
 import software.amazon.awssdk.services.cloudformation.model.CloudFormationException
+import kotlin.time.Duration.Companion.minutes
 
-internal class CloudFormationServiceTest {
-    private val cloudFormationClient = CloudFormationClient.builder().build()
-    private val sut = CloudFormationService.cloudFormationService(cloudFormationClient, StubLogFacade(true))
-    private val stackNameBuilder =
-        StackNameBuilder(StackPrefix("testmaid-aws"), StackPrefix(System.getenv("RuntimeId")!!))
+@AwsEndToEndTest
+internal class CloudFormationServiceTest(
+        private val sut: CloudFormationService
+) {
+    @Test
+    fun testSimpleStack(autoCleanupStackName: AutoCleanupStackName) {
+        val detailedStackInformation = sut.createStack(fastAndSimpleTestStack(autoCleanupStackName.stackName))
+        println(detailedStackInformation.outputs)
+    }
 
     @Test
-    fun testCreateStackWithoutOptionalParameters() {
-        val createdStack = sut.createStack(
-            StackDefinition(
-                stackNameBuilder.forTestCase("testCreateStackWithoutOptionalParameters"),
-                Body(TemplateFixtures.EIP_V1),
-                parameters("StackIdentifier" to "HelloStackId")
-            )
-        )
+    fun testListByPrefix(autoCleanupStackPrefix: AutoCleanupStackPrefix, scope: AutoCleanedCoroutineScope) {
+        val uniqueStackNames = (1..3).map { autoCleanupStackPrefix.generateUniqueName() }
+        val errors = mutableListOf<Exception>()
 
-        println(createdStack)
-        assertEquals(
-            "testmaid-aws-Richard-testCreateStackWithoutOptionalParameters",
-            createdStack.stackName.mappingValue()
-        )
+        val stacks = uniqueStackNames
+                .map {
+                    val deferred = CompletableDeferred<DetailedStackInformation>()
+                    scope.launch {
+                        try {
+                            val detailedStackInformation = sut.createStack(fastAndSimpleTestStack(it))
+                            deferred.complete(detailedStackInformation)
+                        } catch (e: Exception) {
+                            deferred.completeExceptionally(e)
+                        }
+                    }
+                    deferred
+                }.mapNotNull {
+                    runBlocking {
+                        try {
+                            it.await()
+                        } catch (e: Exception) {
+                            errors.add(e)
+                            null
+                        }
+                    }
+                }
+        if (errors.isNotEmpty()) {
+            val exception = UnsupportedOperationException("Errors creating stacks")
+            errors.forEach { exception.addSuppressed(it) }
+            throw exception
+        }
     }
 
     @Test
     fun testCreateFailsForMissingParameters() {
         val exception = assertThrows<CloudFormationException> {
             sut.createStack(
-                StackDefinition(
-                    StackName("HelloWorld"),
-                    Body(TemplateFixtures.EIP_V1)
-                )
+                    StackDefinition(
+                            StackName("HelloWorld"),
+                            Body(TemplateFixtures.EIP_V1)
+                    )
             )
         }
         assertTrue(exception.message!!.startsWith("Parameters: [StackIdentifier] must have values"))
+    }
+
+    private fun fastAndSimpleTestStack(name: StackName): StackDefinition {
+        val body = Body(TemplateFixtures.EIP_V1)
+        val parameters = parameters("StackIdentifier" to name.mappingValue())
+        return StackDefinition(name, body, parameters)
     }
 }

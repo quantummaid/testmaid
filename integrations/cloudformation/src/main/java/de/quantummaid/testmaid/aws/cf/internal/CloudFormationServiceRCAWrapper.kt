@@ -25,20 +25,23 @@ import de.quantummaid.testmaid.aws.cf.exceptions.CreateStackFailed
 import de.quantummaid.testmaid.aws.cf.exceptions.DeleteStackFailed
 import de.quantummaid.testmaid.aws.cf.exceptions.UpdateStackFailed
 import de.quantummaid.testmaid.integrations.aws.cf.plain.api.*
-import de.quantummaid.testmaid.integrations.aws.cf.plain.impl.CloudFormationServiceImpl
 import de.quantummaid.testmaid.integrations.aws.cf.plain.impl.SimpleResourceStatus
+import kotlinx.coroutines.CompletableDeferred
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient
 import software.amazon.awssdk.services.cloudformation.model.Stack
 import kotlin.time.Duration
 
 
 internal class CloudFormationServiceRCAWrapper(
-    private val delegate: CloudFormationServiceImpl,
+    private val delegate: CloudFormationService,
     private val client: CloudFormationClient,
     private val logFacade: RCALogFacade
 ) : CloudFormationService {
+    override fun listStacksWithPrefix(stackPrefix: StackPrefix): List<StackReference> {
+        return delegate.listStacksWithPrefix(stackPrefix)
+    }
 
-    override fun createStack(stackDefinition: StackDefinition, timeout: Duration): CreatedStack {
+    override fun createStack(stackDefinition: StackDefinition, timeout: Duration): DetailedStackInformation {
         try {
             return delegate.createStack(stackDefinition, timeout)
         } catch (e: CreateStackFailed) {
@@ -49,7 +52,7 @@ internal class CloudFormationServiceRCAWrapper(
         }
     }
 
-    override fun updateStack(stackDefinition: StackDefinition, timeout: Duration): CreatedStack {
+    override fun updateStack(stackDefinition: StackDefinition, timeout: Duration): DetailedStackInformation {
         try {
             return delegate.updateStack(stackDefinition, timeout)
         } catch (e: UpdateStackFailed) {
@@ -80,6 +83,10 @@ internal class CloudFormationServiceRCAWrapper(
             logFacade.errorDeleteStackFailed(e.stack, failedResources)
             throw e
         }
+    }
+
+    override fun deleteStackAsync(stackId: StackId, stackName: StackName, timeout: Duration): CompletableDeferred<Unit> {
+        return delegate.deleteStackAsync(stackId, stackName, timeout)
     }
 
     private fun failedResourcesOf(stack: Stack): List<SimpleResourceStatus.Failed> {

@@ -27,6 +27,7 @@ import de.quantummaid.testmaid.internal.testcase.testCaseStateMachine
 import de.quantummaid.testmaid.internal.testclass.testClassStateMachine
 import de.quantummaid.testmaid.internal.testsuite.TestSuiteActor
 import de.quantummaid.testmaid.internal.testsuite.testSuiteStateMachine
+import de.quantummaid.testmaid.model.TimeoutSettings
 import de.quantummaid.testmaid.model.testcase.TestCaseScope
 import de.quantummaid.testmaid.model.testclass.TestClassScope
 import de.quantummaid.testmaid.model.testsuite.TestSuiteScope
@@ -38,7 +39,8 @@ interface TestMaid : AutoCloseable {
     companion object {
         fun buildTestMaid(
             injectMaidBuilder: InjectMaidBuilder,
-            skipDecider: SkipDecider = SkipDecider.alwaysExecute()
+            skipDecider: SkipDecider = SkipDecider.alwaysExecute(),
+            timeoutSettings: TimeoutSettings = TimeoutSettings()
         ): TestMaid {
             val injectMaid = injectMaidBuilder
                 .withLifecycleManagement()
@@ -51,12 +53,12 @@ interface TestMaid : AutoCloseable {
                 }
                 .build()
 
-            return TestMaidImpl(TestSuiteActor.aTestSuiteActor(injectMaid, skipDecider), injectMaid)
+            return TestMaidImpl(TestSuiteActor.aTestSuiteActor(injectMaid, skipDecider, timeoutSettings), injectMaid)
         }
 
         fun renderStateMachine(): String {
-            val testSuiteStateMachine = "testsuite" to testSuiteStateMachine().renderStateMachine()
-            val testClassStateMachine = "testclass" to testClassStateMachine().renderStateMachine()
+            val testSuiteStateMachine = "testsuite" to testSuiteStateMachine(TimeoutSettings()).renderStateMachine()
+            val testClassStateMachine = "testclass" to testClassStateMachine(TimeoutSettings()).renderStateMachine()
             val testCaseStateMachine = "testcase" to testCaseStateMachine().renderStateMachine()
             return listOf(testSuiteStateMachine, testClassStateMachine, testCaseStateMachine)
                 .flatMap { (name, statements) -> renderInSubgraph(name, statements) }

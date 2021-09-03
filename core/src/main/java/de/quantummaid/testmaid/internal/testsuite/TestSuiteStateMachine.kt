@@ -25,93 +25,99 @@ import de.quantummaid.injectmaid.api.Injector
 import de.quantummaid.testmaid.ExecutionDecision
 import de.quantummaid.testmaid.SkipDecider
 import de.quantummaid.testmaid.internal.statemachine.StateMachineActor
+import de.quantummaid.testmaid.internal.statemachine.StateMachineBuilder
 import de.quantummaid.testmaid.internal.statemachine.StateMachineBuilder.Companion.aStateMachineUsing
 import de.quantummaid.testmaid.internal.testclass.TestClassActor
+import de.quantummaid.testmaid.model.TimeoutSettings
 import de.quantummaid.testmaid.model.testcase.TestCaseData
 import de.quantummaid.testmaid.model.testclass.TestClass
 import de.quantummaid.testmaid.model.testclass.TestClassData
 import de.quantummaid.testmaid.model.testsuite.TestSuiteScope
 import kotlinx.coroutines.CompletableDeferred
 
-internal fun testSuiteStateMachine(): StateMachineActor<TestSuiteState, TestSuiteMessage> {
-    return testSuiteStateMachineBuilder.build()
+internal fun testSuiteStateMachine(timeoutSettings: TimeoutSettings): StateMachineActor<TestSuiteState, TestSuiteMessage> {
+    return testSuiteStateMachineBuilder(timeoutSettings).build()
 }
 
-private val testSuiteStateMachineBuilder = aStateMachineUsing<TestSuiteState, TestSuiteMessage>("TestSuiteActor")
-    .withInitialState(Initial)
-    .withEndStateSuperClass<TestSuiteEndState>()
-    .withTransition<Initial, PrepareTestSuite, ReadyToExecute> {
-        val scopedInjector = it.parentInjector.enterScope(TestSuiteScope())
-        ReadyToExecute(scopedInjector, it.skipDecider)
-    }
-    .withTransition<ReadyToExecute, RegisterTestClass, ReadyToExecute> {
-        val testClassActor = TestClassActor.aTestClassActor()
-        it.actor.complete(testClassActor.delegate)
-        testClasses[it.testClassData] = testClassActor
-        testClassActor.register(it.testClassData)
+private fun testSuiteStateMachineBuilder(
+    timeoutSettings: TimeoutSettings
+): StateMachineBuilder<TestSuiteState, TestSuiteMessage> {
+    return aStateMachineUsing<TestSuiteState, TestSuiteMessage>("TestSuiteActor")
+        .withInitialState(Initial)
+        .withEndStateSuperClass<TestSuiteEndState>()
+        .withTransition<Initial, PrepareTestSuite, ReadyToExecute> {
+            val scopedInjector = it.parentInjector.enterScope(TestSuiteScope())
+            ReadyToExecute(scopedInjector, it.skipDecider)
+        }
+        .withTransition<ReadyToExecute, RegisterTestClass, ReadyToExecute> {
+            val testClassActor = TestClassActor.aTestClassActor(timeoutSettings)
+            it.actor.complete(testClassActor.delegate)
+            testClasses[it.testClassData] = testClassActor
+            testClassActor.register(it.testClassData)
 
-        val executionDecision = skipDecider.skipTestClass(it.testClassData, scopedInjector)
-        if (!executionDecision.execute) {
-            testClassActor.skip(executionDecision.reason)
+            val executionDecision = skipDecider.skipTestClass(it.testClassData, scopedInjector)
+            if (!executionDecision.execute) {
+                testClassActor.skip(executionDecision.reason)
+            }
+            it.executionDecision.complete(executionDecision)
+            this
         }
-        it.executionDecision.complete(executionDecision)
-        this
-    }
-    .withTransition<ReadyToExecute, PrepareTestClass, ReadyToExecute> {
-        val testClassActor = testClasses[it.testClassData]!!
-        testClassActor.prepare(it.testClassData, scopedInjector)
-        this
-    }
-    .withTransition<ReadyToExecute, PostpareTestClass, ReadyToExecute> {
-        val testClassActor = testClasses[it.testClassData]!!
-        testClassActor.postpare()
-        this
-    }
-    .withQuery<ReadyToExecute, CanProvideTestClassParameter> {
-        val testClassActor = testClasses[it.testClassData]!!
-        val canProvide = testClassActor.canProvideDependency(it.dependencyType)
-        it.result.complete(canProvide)
-    }
-    .withQuery<ReadyToExecute, CanProvideTestCaseParameter> {
-        val testClassActor = testClasses[it.testCaseData.testClassData]!!
-        val canProvide = testClassActor.canProvideTestCaseDependency(it.testCaseData, it.dependencyType)
-        it.result.complete(canProvide)
-    }
-    .withQuery<ReadyToExecute, ResolveTestClassParameter> {
-        val testClassActor = testClasses[it.testClassData]!!
-        val resolution = testClassActor.resolveDependency(it.dependencyType)
-        it.result.complete(resolution)
-    }
-    .withQuery<ReadyToExecute, ResolveTestCaseParameter> {
-        val testClassActor = testClasses[it.testCaseData.testClassData]!!
-        val canProvide = testClassActor.resolveTestCaseDependency(it.testCaseData, it.dependencyType)
-        it.result.complete(canProvide)
-    }
-    .withTransition<ReadyToExecute, RegisterTestCase, ReadyToExecute> {
-        val testClassActor = testClasses[it.testCaseData.testClassData]!!
-        val actor = testClassActor.registerTestCase(it.testCaseData)
-        it.actor.complete(actor)
-        val executionDecision = skipDecider.skipTestCase(it.testCaseData, scopedInjector)
-        if (!executionDecision.execute) {
-            testClassActor.skipTestCase(it.testCaseData, executionDecision.reason)
+        .withTransition<ReadyToExecute, PrepareTestClass, ReadyToExecute> {
+            val testClassActor = testClasses[it.testClassData]!!
+            testClassActor.prepare(it.testClassData, scopedInjector)
+            this
         }
-        it.executionDecision.complete(executionDecision)
-        this
-    }
-    .withTransition<ReadyToExecute, PrepareTestCase, ReadyToExecute> {
-        val testClassActor = testClasses[it.testCaseData.testClassData]!!
-        testClassActor.prepareTestCase(it.testCaseData)
-        this
-    }
-    .withTransition<ReadyToExecute, PostpareTestCase, ReadyToExecute> {
-        val testClassActor = testClasses[it.testCaseData.testClassData]!!
-        testClassActor.postpareTestCase(it.testCaseData, it.error)
-        this
-    }
-    .withTransition<ReadyToExecute, AllTestsFinished, Passed> {
-        scopedInjector.close()
-        Passed(scopedInjector, testClasses)
-    }
+        .withTransition<ReadyToExecute, PostpareTestClass, ReadyToExecute> {
+            val testClassActor = testClasses[it.testClassData]!!
+            testClassActor.postpare()
+            this
+        }
+        .withQuery<ReadyToExecute, CanProvideTestClassParameter> {
+            val testClassActor = testClasses[it.testClassData]!!
+            val canProvide = testClassActor.canProvideDependency(it.dependencyType)
+            it.result.complete(canProvide)
+        }
+        .withQuery<ReadyToExecute, CanProvideTestCaseParameter> {
+            val testClassActor = testClasses[it.testCaseData.testClassData]!!
+            val canProvide = testClassActor.canProvideTestCaseDependency(it.testCaseData, it.dependencyType)
+            it.result.complete(canProvide)
+        }
+        .withQuery<ReadyToExecute, ResolveTestClassParameter> {
+            val testClassActor = testClasses[it.testClassData]!!
+            val resolution = testClassActor.resolveDependency(it.dependencyType)
+            it.result.complete(resolution)
+        }
+        .withQuery<ReadyToExecute, ResolveTestCaseParameter> {
+            val testClassActor = testClasses[it.testCaseData.testClassData]!!
+            val canProvide = testClassActor.resolveTestCaseDependency(it.testCaseData, it.dependencyType)
+            it.result.complete(canProvide)
+        }
+        .withTransition<ReadyToExecute, RegisterTestCase, ReadyToExecute> {
+            val testClassActor = testClasses[it.testCaseData.testClassData]!!
+            val actor = testClassActor.registerTestCase(it.testCaseData)
+            it.actor.complete(actor)
+            val executionDecision = skipDecider.skipTestCase(it.testCaseData, scopedInjector)
+            if (!executionDecision.execute) {
+                testClassActor.skipTestCase(it.testCaseData, executionDecision.reason)
+            }
+            it.executionDecision.complete(executionDecision)
+            this
+        }
+        .withTransition<ReadyToExecute, PrepareTestCase, ReadyToExecute> {
+            val testClassActor = testClasses[it.testCaseData.testClassData]!!
+            testClassActor.prepareTestCase(it.testCaseData)
+            this
+        }
+        .withTransition<ReadyToExecute, PostpareTestCase, ReadyToExecute> {
+            val testClassActor = testClasses[it.testCaseData.testClassData]!!
+            testClassActor.postpareTestCase(it.testCaseData, it.error)
+            this
+        }
+        .withTransition<ReadyToExecute, AllTestsFinished, Passed> {
+            scopedInjector.close()
+            Passed(scopedInjector, testClasses)
+        }
+}
 
 internal interface TestSuiteState
 

@@ -23,16 +23,22 @@ package de.quantummaid.testmaid.internal.testclass
 
 import de.quantummaid.injectmaid.api.Injector
 import de.quantummaid.testmaid.internal.statemachine.StateMachineActor
+import de.quantummaid.testmaid.model.CleanupTestParameterTimeout
+import de.quantummaid.testmaid.model.CreateTestParameterTimeout
+import de.quantummaid.testmaid.model.TimeoutSettings
 import de.quantummaid.testmaid.model.testcase.TestCaseData
 import de.quantummaid.testmaid.model.testclass.TestClass
 import de.quantummaid.testmaid.model.testclass.TestClassData
 import kotlinx.coroutines.runBlocking
 
-internal class TestClassActor private constructor(internal val delegate: StateMachineActor<TestClassState, TestClassMessage>) :
+internal class TestClassActor private constructor(
+    internal val delegate: StateMachineActor<TestClassState, TestClassMessage>,
+    private val timeoutSettings: TimeoutSettings
+) :
     TestClass {
     companion object {
-        fun aTestClassActor(): TestClassActor {
-            return TestClassActor(testClassStateMachine())
+        fun aTestClassActor(timeoutSettings: TimeoutSettings): TestClassActor {
+            return TestClassActor(testClassStateMachine(timeoutSettings), timeoutSettings)
         }
     }
 
@@ -50,7 +56,9 @@ internal class TestClassActor private constructor(internal val delegate: StateMa
     }
 
     override fun postpare() {
-        delegate.signalAwaitingSuccess(PostpareTestClass)
+        delegate.signalAwaitingSuccess(PostpareTestClass, timeoutSettings.cleanupTestParametersTimeout) {
+            CleanupTestParameterTimeout(delegate.name, it)
+        }
     }
 
     override fun registerTestCase(testCaseData: TestCaseData): AutoCloseable {
@@ -68,7 +76,12 @@ internal class TestClassActor private constructor(internal val delegate: StateMa
     }
 
     override fun postpareTestCase(testCaseData: TestCaseData, error: Throwable?) {
-        delegate.signalAwaitingSuccess(PostpareTestCase(testCaseData, error))
+        delegate.signalAwaitingSuccess(
+            PostpareTestCase(testCaseData, error),
+            timeoutSettings.cleanupTestParametersTimeout
+        ) {
+            CleanupTestParameterTimeout(testCaseData.name, it)
+        }
     }
 
     override fun canProvideDependency(dependencyType: Class<*>): Boolean {
@@ -85,13 +98,17 @@ internal class TestClassActor private constructor(internal val delegate: StateMa
 
     override fun resolveDependency(dependencyType: Class<*>): Any {
         val msg = ResolveParameter(dependencyType)
-        delegate.signalAwaitingSuccess(msg)
+        delegate.signalAwaitingSuccess(msg, timeoutSettings.createTestParameterTimeout) {
+            CreateTestParameterTimeout(delegate.name, dependencyType, it)
+        }
         return runBlocking { msg.result.await() }
     }
 
     override fun resolveTestCaseDependency(testCaseData: TestCaseData, dependencyType: Class<*>): Any {
         val msg = ResolveTestCaseParameter(testCaseData, dependencyType)
-        delegate.signalAwaitingSuccess(msg)
+        delegate.signalAwaitingSuccess(msg, timeoutSettings.createTestParameterTimeout) {
+            CreateTestParameterTimeout(testCaseData.name, dependencyType, it)
+        }
         return runBlocking { msg.result.await() }
     }
 }

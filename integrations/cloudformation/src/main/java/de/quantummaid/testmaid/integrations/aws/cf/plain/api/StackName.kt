@@ -27,6 +27,7 @@ import de.quantummaid.mapmaid.validatedtypeskotlin.validation.StringValidator.Co
 import de.quantummaid.mapmaid.validatedtypeskotlin.validation.StringValidator.Companion.regex
 import de.quantummaid.testmaid.localfs.Md5Sum
 import de.quantummaid.testmaid.localfs.Md5Sum.Companion.md5SumOf
+import java.util.*
 
 
 /**
@@ -35,11 +36,21 @@ import de.quantummaid.testmaid.localfs.Md5Sum.Companion.md5SumOf
  */
 class StackName(unsafe: String) : ValidatedString(validator, unsafe) {
     companion object {
+        private val regex = "[^a-zA-Z0-9-]".toRegex()
+
+        fun cleanupForUsageAsStackName(string: String): String {
+            return string.replace(regex, "")
+        }
+
         private val validator = allOf(length(1, 128), regex("[a-zA-Z][a-zA-Z0-9-]*".toRegex()))
     }
 
     fun md5Sum(): Md5Sum {
         return md5SumOf(mappingValue())
+    }
+
+    fun startsWith(stackPrefix: StackPrefix): Boolean {
+        return this.safeValue.startsWith(stackPrefix.mappingValue())
     }
 }
 
@@ -47,10 +58,21 @@ class StackPrefix(unsafe: String) : ValidatedString(validator, unsafe) {
     companion object {
         private val validator = allOf(length(1, 128), regex("[a-zA-Z][a-zA-Z0-9-]*".toRegex()))
     }
+
+    fun generateUniqueName(): StackName {
+        val uuid = UUID.randomUUID().toString()
+        val unique = uuid.subSequence(16..24)
+        return StackName("${safeValue}${unique}")
+    }
 }
 
 class StackNameBuilder(val project: StackPrefix, val runtimeId: StackPrefix) {
-    fun forTestCase(testCase: String): StackName {
-        return StackName("${project.mappingValue()}-${runtimeId.mappingValue()}-${testCase}")
+    fun uniqueForTestCase(testCase: String): StackName {
+        return prefixForTestCase(testCase).generateUniqueName()
+    }
+
+    fun prefixForTestCase(testCase: String): StackPrefix {
+        val cleanedName = StackName.cleanupForUsageAsStackName(testCase)
+        return StackPrefix("${project.mappingValue()}-${runtimeId.mappingValue()}-${cleanedName}")
     }
 }
