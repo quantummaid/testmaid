@@ -21,25 +21,30 @@
 
 package de.quantummaid.testmaid.internal.statemachine
 
-import kotlin.reflect.KClass
-import kotlin.reflect.cast
+import kotlinx.coroutines.CompletableDeferred
+import java.util.concurrent.CompletableFuture
 
-internal data class Query<StateSuperClass : Any, MessageSuperClass : Any, OriginState : StateSuperClass, Message : MessageSuperClass>(
-    val originStateClass: KClass<OriginState>,
-    val messageClass: KClass<Message>,
-    val handler: OriginState.(Message) -> Unit
-) {
+interface DeferredResponse {
+    val response: CompletableDeferred<*>
+}
 
-    fun handle(currentState: StateSuperClass, message: MessageSuperClass): Boolean {
-        val stateMatches = this.originStateClass.isInstance(currentState)
-        if (stateMatches) {
-            val messageMatches = message::class == this.messageClass
-            if (messageMatches) {
-                handler(this.originStateClass.cast(currentState), this.messageClass.cast(message))
-                message.checkAnyExpectedResponseHasBeenProvided(currentState)
-                return true
-            }
-        }
-        return false
+interface FutureResponse {
+    val response: CompletableFuture<*>
+}
+
+fun Any.checkAnyExpectedResponseHasBeenProvided(state: Any) {
+    if ((this is FutureResponse && !this.response.isDone) ||
+        (this is DeferredResponse && !this.response.isCompleted)
+    ) {
+        throw ResponseException(
+            "handling of $this in $state misses it.response.complete(Exceptionally)? call(s)"
+        )
+    }
+}
+
+class ResponseException(message: String) : RuntimeException(message, null, false, true) {
+    companion object {
+        fun becauseOfIncomplete(completable: Any, message: Any, stateMachine: Any): ResponseException =
+            ResponseException("incomplete $completable for $message handling in $stateMachine")
     }
 }

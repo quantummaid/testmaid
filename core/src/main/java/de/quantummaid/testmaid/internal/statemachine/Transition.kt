@@ -44,6 +44,7 @@ internal data class Transition<
                 val castedState = this.originStateClass.cast(currentState)
                 val castedMessage = this.messageClass.cast(message)
                 val newState = handler(castedState, castedMessage)
+                message.checkAnyExpectedResponseHasBeenProvided(currentState)
                 return newState
             }
         }
