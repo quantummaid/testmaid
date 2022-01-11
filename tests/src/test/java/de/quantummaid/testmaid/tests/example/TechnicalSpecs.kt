@@ -29,7 +29,9 @@ import de.quantummaid.testmaid.model.testclass.TestClassScope
 import de.quantummaid.testmaid.model.testsuite.TestSuiteScope
 import de.quantummaid.testmaid.tests.example.testsupport.InMemoryConfiguration
 import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Disabled
+import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 
@@ -67,6 +69,10 @@ class FailingAutoclosableInGlobalScope : AutoCloseable {
     }
 }
 
+data class SomethingThatDependsOnTestSuiteScope(val scope: TestSuiteScope)
+data class SomethingThatDependsOnTestClassScope(val scope: TestClassScope)
+data class SomethingThatDependsOnTestCaseScope(val scope: TestCaseScope)
+
 private class TechnicalTestSupport : TestMaidJunit5Adapter(testMaid) {
     companion object {
         private val testMaid = testMaid()
@@ -78,10 +84,27 @@ private class TechnicalTestSupport : TestMaidJunit5Adapter(testMaid) {
                 .withType(FailingAutoclosableInGlobalScope::class.java)
                 .withScope(TestSuiteScope::class.java) { testSuiteInjectMaid ->
                     testSuiteInjectMaid.withType(FailingAutoclosableInTestSuiteScope::class.java)
+
+                    testSuiteInjectMaid.withCustomType(
+                        SomethingThatDependsOnTestSuiteScope::class.java,
+                        TestSuiteScope::class.java
+                    ) { SomethingThatDependsOnTestSuiteScope(it) }
+
                     testSuiteInjectMaid.withScope(TestClassScope::class.java) { testClassInjectMaid ->
                         testClassInjectMaid.withType(FailingAutoclosableInTestClassScope::class.java)
+
+                        testClassInjectMaid.withCustomType(
+                            SomethingThatDependsOnTestClassScope::class.java,
+                            TestClassScope::class.java
+                        ) { SomethingThatDependsOnTestClassScope(it) }
+
                         testClassInjectMaid.withScope(TestCaseScope::class.java) { testCaseInjectMaid ->
                             testCaseInjectMaid.withType(FailingAutoclosableInTestCaseScope::class.java)
+
+                            testClassInjectMaid.withCustomType(
+                                SomethingThatDependsOnTestCaseScope::class.java,
+                                TestCaseScope::class.java
+                            ) { SomethingThatDependsOnTestCaseScope(it) }
                         }
                     }
                 }
@@ -132,3 +155,32 @@ class FailsOnGlobalInjectorCloseSpecs3 {
         Assertions.assertNotNull(failingAutoclosableInGlobalScope)
     }
 }
+
+@TechnicalTest
+class UsesAllThreeTestScopesAsTestClass {
+    @Test
+    fun usesAllThreeTestScopes(
+        dependsOnSuiteScope: SomethingThatDependsOnTestSuiteScope,
+        dependsOnClassScope: SomethingThatDependsOnTestClassScope,
+        dependsOnTestScope: SomethingThatDependsOnTestCaseScope
+    ) {
+        assertEquals("TBD", dependsOnClassScope.scope.testClassData.name)
+        assertEquals("TBD", dependsOnTestScope.scope.testCaseData.name)
+    }
+}
+
+interface UsesAllThreeTestScopesAsTestInterface {
+    @Test
+    @Tag("stephanewashere")
+    fun usesAllThreeTestScopes(
+        dependsOnSuiteScope: SomethingThatDependsOnTestSuiteScope,
+        dependsOnClassScope: SomethingThatDependsOnTestClassScope,
+        dependsOnTestScope: SomethingThatDependsOnTestCaseScope
+    ) {
+        assertEquals("TBD", dependsOnClassScope.scope.testClassData.name)
+        assertEquals("TBD", dependsOnTestScope.scope.testCaseData.name)
+    }
+}
+
+@TechnicalTest
+class UsesAllThreeTestScopesThroughInterface: UsesAllThreeTestScopesAsTestInterface {}
