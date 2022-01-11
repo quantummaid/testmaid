@@ -48,7 +48,6 @@
 
     <dependencyManagement>
         <dependencies>
-
             <dependency>
                 <groupId>de.quantummaid.mapmaid</groupId>
                 <artifactId>core</artifactId>
@@ -68,11 +67,6 @@
                 <groupId>de.quantummaid.mapmaid.integrations</groupId>
                 <artifactId>mapmaid-dynamodb</artifactId>
                 <version>0.10.19</version>
-            </dependency>
-            <dependency>
-                <groupId>de.quantummaid.usecasemaid</groupId>
-                <artifactId>core</artifactId>
-                <version>0.0.37</version>
             </dependency>
             <dependency>
                 <groupId>de.quantummaid.mapmaid.integrations</groupId>
@@ -114,6 +108,11 @@
     <dependencies>
 
         <dependency>
+            <groupId>de.quantummaid.usecasemaid</groupId>
+            <artifactId>core</artifactId>
+            <version>0.0.37</version>
+        </dependency>
+        <dependency>
             <groupId>de.quantummaid.mapmaid.integrations</groupId>
             <artifactId>mapmaid-validatedtypes-kotlin</artifactId>
         </dependency>
@@ -128,13 +127,22 @@
             </exclusions>
         </dependency>
         <dependency>
-            <groupId>org.jetbrains.kotlin</groupId>
-            <artifactId>kotlin-reflect</artifactId>
+            <groupId>de.quantummaid.graalvmlambdaruntime</groupId>
+            <artifactId>core</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.jetbrains.kotlin</groupId>
+                    <artifactId>kotlin-stdlib-jdk8</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
-
         <dependency>
             <groupId>de.quantummaid.injectmaid</groupId>
             <artifactId>core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-reflect</artifactId>
         </dependency>
 
         <dependency>

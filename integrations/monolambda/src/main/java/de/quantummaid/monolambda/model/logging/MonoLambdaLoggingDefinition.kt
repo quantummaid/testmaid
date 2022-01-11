@@ -26,6 +26,9 @@ import de.quantummaid.monolambda.cf.CloudFormationTemplatePart
 import de.quantummaid.monolambda.cf.parts.logs.LogGroupRetentionInDays
 import de.quantummaid.monolambda.cf.parts.logs.MonoLambdaLogging
 import de.quantummaid.monolambda.model.cfg.EnvVariableName
+import de.quantummaid.monolambda.model.components.MonoLambdaComponentDefinition
+import de.quantummaid.monolambda.model.scopes.runtime.ConfigurationDefinition
+import de.quantummaid.monolambda.model.scopes.runtime.ConfigurationParameterDefinition
 
 class MonoLambdaLoggingDefinition() : MonoLambdaComponentDefinition {
     companion object {
@@ -34,6 +37,10 @@ class MonoLambdaLoggingDefinition() : MonoLambdaComponentDefinition {
                 "Specifies the number of days after which a log statement should be " +
                         "deleted from the cloud watch log group."
         )
+
+        fun blah() {
+            PrLogFa
+        }
     }
 
     override fun configurationDefinition(): ConfigurationDefinition {

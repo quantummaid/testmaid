@@ -19,7 +19,7 @@
  * under the License.
  */
 
-package de.quantummaid.monolambda
+package de.quantummaid.monolambda.model.scopes.runtime
 
 import de.quantummaid.monolambda.model.MonoLambdaName
 import de.quantummaid.monolambda.model.cfg.EnvVariableName
@@ -37,8 +37,8 @@ import de.quantummaid.monolambda.model.cfg.EnvVariables
  *
  * TODO: Implement what has been documented here :)
  */
-class MonoLambdaConfigurationFactory(private val configurationDefinitions: List<ConfigurationDefinition>) {
-    fun loadFromEnvironment(envVariables: EnvVariables): Configuration {
+class RuntimeConfigurationFactory(private val configurationDefinitions: List<ConfigurationDefinition>) {
+    fun loadFromEnvironment(envVariables: EnvVariables): RuntimeConfiguration {
         val configurationParameter = configurationDefinitions.flatMap { definition ->
             definition.parameters.map { parameter ->
                 val envValue = if (parameter.defaultValue != null) {
@@ -51,7 +51,7 @@ class MonoLambdaConfigurationFactory(private val configurationDefinitions: List<
 
             }
         }
-        return Configuration(MonoLambdaName(""), configurationParameter)
+        return RuntimeConfiguration(configurationParameter)
     }
 }
 
@@ -78,15 +78,9 @@ class ConfigurationDefinition(
     }
 }
 
-class Configuration(
-        val monoLambdaName: MonoLambdaName,
-        private val values: List<ConfigurationParameter<Any>>
-) {
-
+class RuntimeConfiguration(private val values: List<ConfigurationParameter<Any>>) {
     @Suppress("UNCHECKED_CAST")
     fun <TargetType : Any> valueOf(definition: ConfigurationParameterDefinition<TargetType>): TargetType {
         return this.values.single { it.name == definition.name }.value as TargetType
     }
-
-
 }

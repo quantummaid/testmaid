@@ -19,14 +19,7 @@
  * under the License.
  */
 
-package de.quantummaid.monolambda.model.tests.fullremote
+package de.quantummaid.monolambda.model.modes
 
-import de.quantummaid.monolambda.MonoLambdaDefinition
-import de.quantummaid.monolambda.model.tests.MonoLambdaUnderTest
-
-fun MonoLambdaDefinition.systemUnderTestFullRemote(): MonoLambdaUnderTestFullRemote {
-    TODO()
-}
-
-class MonoLambdaUnderTestFullRemote : MonoLambdaUnderTest {
+interface MonoLambdaUnderTest {
 }

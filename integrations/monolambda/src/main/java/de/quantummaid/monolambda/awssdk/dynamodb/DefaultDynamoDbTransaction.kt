@@ -21,10 +21,12 @@
 
 package de.quantummaid.monolambda.awssdk.dynamodb
 
+import de.quantummaid.monolambda.awssdk.dynamodb.CommitFailedException.Companion.commitFailed
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient
 import software.amazon.awssdk.services.dynamodb.model.Delete
 import software.amazon.awssdk.services.dynamodb.model.Put
 import software.amazon.awssdk.services.dynamodb.model.TransactWriteItem
+import software.amazon.awssdk.services.dynamodb.model.TransactionCanceledException
 
 /**
  * This implementation is not thread safe. As I'm not aware of ways to make this thread safe without introducing
@@ -35,21 +37,24 @@ import software.amazon.awssdk.services.dynamodb.model.TransactWriteItem
 class DefaultDynamoDbTransaction(override val client: DynamoDbClient) : DynamoDbTransaction {
     private var open = true
     private val txWriteItems: MutableList<TransactWriteItem> = mutableListOf()
+    private val txWriteItemDescriptions: MutableList<String> = mutableListOf()
 
-    override fun put(block: Put.Builder.() -> Unit) {
+    override fun put(description: String, block: Put.Builder.() -> Unit) {
         ensureOpen()
         val transactWriteItem = TransactWriteItem.builder()
                 .put { builder -> block(builder) }
                 .build()
         txWriteItems.add(transactWriteItem)
+        txWriteItemDescriptions.add(description)
     }
 
-    override fun delete(block: Delete.Builder.() -> Unit) {
+    override fun delete(description: String, block: Delete.Builder.() -> Unit) {
         ensureOpen()
         val transactWriteItem = TransactWriteItem.builder()
                 .delete { builder -> block(builder) }
                 .build()
         txWriteItems.add(transactWriteItem)
+        txWriteItemDescriptions.add(description)
     }
 
     /**
@@ -65,8 +70,12 @@ class DefaultDynamoDbTransaction(override val client: DynamoDbClient) : DynamoDb
     override fun commit() {
         ensureOpen()
         open = false
-        this.client.transactWriteItems {
-            it.transactItems(txWriteItems)
+        try {
+            this.client.transactWriteItems {
+                it.transactItems(txWriteItems)
+            }
+        } catch (e: TransactionCanceledException) {
+            throw commitFailed(e, txWriteItemDescriptions)
         }
     }
 

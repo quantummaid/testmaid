@@ -40,6 +40,8 @@
     <modules>
         <module>junit5</module>
         <module>cloudformation</module>
+        <module>monolambda</module>
+        <module>mymono</module>
     </modules>
 
     <properties>

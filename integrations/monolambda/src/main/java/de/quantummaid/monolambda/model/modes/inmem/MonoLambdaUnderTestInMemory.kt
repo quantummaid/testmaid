@@ -19,7 +19,14 @@
  * under the License.
  */
 
-package de.quantummaid.monolambda.model.tests
+package de.quantummaid.monolambda.model.modes.inmem
 
-interface MonoLambdaUnderTest {
+import de.quantummaid.monolambda.MonoLambdaDefinition
+import de.quantummaid.monolambda.model.modes.MonoLambdaUnderTest
+
+fun MonoLambdaDefinition.systemUnderTestInMemory(): MonoLambdaUnderTestInMemory {
+    TODO()
+}
+
+class MonoLambdaUnderTestInMemory : MonoLambdaUnderTest {
 }

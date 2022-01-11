@@ -27,7 +27,7 @@
     <groupId>my.company</groupId>
     <artifactId>mymono</artifactId>
     <version>1.0</version>
-    <name>MonoLambda</name>
+    <name>MyMono</name>
 
     <properties>
         <kotlin.version>1.5.20</kotlin.version>

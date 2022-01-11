@@ -19,15 +19,14 @@
  * under the License.
  */
 
-package de.quantummaid.monolambda.awssdk.dynamodb
+package de.quantummaid.monolambda.model.modes.fullremote
 
-import software.amazon.awssdk.services.dynamodb.DynamoDbClient
-import software.amazon.awssdk.services.dynamodb.model.Delete
-import software.amazon.awssdk.services.dynamodb.model.Put
+import de.quantummaid.monolambda.MonoLambdaDefinition
+import de.quantummaid.monolambda.model.modes.MonoLambdaUnderTest
 
-interface DynamoDbTransaction {
-    val client: DynamoDbClient
-    fun put(description: String, block: Put.Builder.() -> Unit)
-    fun delete(description: String, block: Delete.Builder.() -> Unit)
-    fun commit()
+fun MonoLambdaDefinition.systemUnderTestFullRemote(): MonoLambdaUnderTestFullRemote {
+    TODO()
+}
+
+class MonoLambdaUnderTestFullRemote : MonoLambdaUnderTest {
 }

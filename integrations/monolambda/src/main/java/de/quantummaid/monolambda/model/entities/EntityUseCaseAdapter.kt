@@ -21,15 +21,6 @@
 
 package de.quantummaid.monolambda.model.entities
 
-import kotlin.reflect.KClass
-
 interface EntityUseCaseAdapter {
-
-    companion object {
-        fun buildFromConventionalUseCase(useCaseClass: KClass<out Any>) : EntityUseCaseAdapter {
-UseCaseMaid
-        }
-    }
-
 
 }

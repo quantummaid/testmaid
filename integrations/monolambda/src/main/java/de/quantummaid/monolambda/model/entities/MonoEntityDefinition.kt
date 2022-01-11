@@ -21,17 +21,10 @@
 
 package de.quantummaid.monolambda.model.entities
 
-import de.quantummaid.monolambda.ConfigurationDefinition
-import de.quantummaid.monolambda.MonoLambdaComponentDefinition
-import kotlin.reflect.KClass
-
 class MonoEntityDefinition<Entity : Any>(
         val name: EntityName,
         val entityAdapter: EntityAdapter<Entity>,
         val useCaseAdapters: Collection<EntityUseCaseAdapter>
-) : MonoLambdaComponentDefinition {
-    override fun configurationDefinition(): ConfigurationDefinition {
-        TODO("Not yet implemented")
-    }
+) {
 
 }
