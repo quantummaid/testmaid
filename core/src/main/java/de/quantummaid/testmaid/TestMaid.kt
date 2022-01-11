@@ -30,6 +30,7 @@ import de.quantummaid.testmaid.internal.testsuite.testSuiteStateMachine
 import de.quantummaid.testmaid.model.testcase.TestCaseScope
 import de.quantummaid.testmaid.model.testclass.TestClassScope
 import de.quantummaid.testmaid.model.testsuite.TestSuiteScope
+import kotlin.time.Duration
 
 interface TestMaid : AutoCloseable {
     val integrationApi: TestMaidIntegrationApi
@@ -38,7 +39,8 @@ interface TestMaid : AutoCloseable {
     companion object {
         fun buildTestMaid(
             injectMaidBuilder: InjectMaidBuilder,
-            skipDecider: SkipDecider = SkipDecider.alwaysExecute()
+            skipDecider: SkipDecider = SkipDecider.alwaysExecute(),
+            timeouts: Timeouts = Timeouts.simplifiedTimeouts()
         ): TestMaid {
             val injectMaid = injectMaidBuilder
                 .withLifecycleManagement()
@@ -51,12 +53,13 @@ interface TestMaid : AutoCloseable {
                 }
                 .build()
 
-            return TestMaidImpl(TestSuiteActor.aTestSuiteActor(injectMaid, skipDecider), injectMaid)
+            return TestMaidImpl(TestSuiteActor.aTestSuiteActor(timeouts, injectMaid, skipDecider), injectMaid)
         }
 
         fun renderStateMachine(): String {
-            val testSuiteStateMachine = "testsuite" to testSuiteStateMachine().renderStateMachine()
-            val testClassStateMachine = "testclass" to testClassStateMachine().renderStateMachine()
+            val timeouts = Timeouts.simplifiedTimeouts()
+            val testSuiteStateMachine = "testsuite" to testSuiteStateMachine(timeouts).renderStateMachine()
+            val testClassStateMachine = "testclass" to testClassStateMachine(timeouts).renderStateMachine()
             val testCaseStateMachine = "testcase" to testCaseStateMachine().renderStateMachine()
             return listOf(testSuiteStateMachine, testClassStateMachine, testCaseStateMachine)
                 .flatMap { (name, statements) -> renderInSubgraph(name, statements) }

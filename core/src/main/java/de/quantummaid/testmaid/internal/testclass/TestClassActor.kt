@@ -22,76 +22,89 @@
 package de.quantummaid.testmaid.internal.testclass
 
 import de.quantummaid.injectmaid.api.Injector
+import de.quantummaid.testmaid.Timeouts
+import de.quantummaid.testmaid.Timeouts.Companion.delegated
 import de.quantummaid.testmaid.internal.statemachine.StateMachineActor
 import de.quantummaid.testmaid.model.testcase.TestCaseData
 import de.quantummaid.testmaid.model.testclass.TestClass
 import de.quantummaid.testmaid.model.testclass.TestClassData
 import kotlinx.coroutines.runBlocking
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
-internal class TestClassActor private constructor(internal val delegate: StateMachineActor<TestClassState, TestClassMessage>) :
+internal class TestClassActor private constructor(
+    private val timeouts: Timeouts,
+    internal val delegate: StateMachineActor<TestClassState, TestClassMessage>
+    ) :
     TestClass {
     companion object {
-        fun aTestClassActor(): TestClassActor {
-            return TestClassActor(testClassStateMachine())
+        fun aTestClassActor(timeouts: Timeouts): TestClassActor {
+            return TestClassActor(timeouts, testClassStateMachine(timeouts))
         }
     }
 
     override fun register(testClassData: TestClassData) {
-        delegate.signalAwaitingSuccess(RegisterTestClass(testClassData))
+        delegate.signalAwaitingSuccess(RegisterTestClass(testClassData), timeouts.defaultTimeout)
     }
 
     override fun skip(reason: String) {
-        delegate.signalAwaitingSuccess(SkipTestClass(reason))
+        delegate.signalAwaitingSuccess(SkipTestClass(reason), timeouts.defaultTimeout)
     }
 
     override fun prepare(testClassData: TestClassData, parentInjector: Injector) {
         val msg = PrepareTestClass(testClassData, parentInjector)
-        delegate.signalAwaitingSuccess(msg)
+        delegate.signalAwaitingSuccess(msg, timeouts.prepareTestClassTimeout)
     }
 
     override fun postpare() {
-        delegate.signalAwaitingSuccess(PostpareTestClass)
+        delegate.signalAwaitingSuccess(PostpareTestClass, timeouts.postpareTestClassTimeout)
     }
 
     override fun registerTestCase(testCaseData: TestCaseData): AutoCloseable {
         val msg = RegisterTestCase(testCaseData)
-        delegate.signalAwaitingSuccess(msg)
+        delegate.signalAwaitingSuccess(msg, timeouts.defaultTimeout)
         return runBlocking { msg.actor.await() }
     }
 
     override fun skipTestCase(testCaseData: TestCaseData, reason: String) {
-        delegate.signalAwaitingSuccess(SkipTestCase(testCaseData, reason))
+        delegate.signalAwaitingSuccess(SkipTestCase(testCaseData, reason), timeouts.defaultTimeout)
     }
 
     override fun prepareTestCase(testCaseData: TestCaseData) {
-        delegate.signalAwaitingSuccess(PrepareTestCase(testCaseData))
+        delegate.signalAwaitingSuccess(
+            PrepareTestCase(testCaseData),
+            timeouts.prepareTestCaseTimeout.delegated(1)
+        )
     }
 
     override fun postpareTestCase(testCaseData: TestCaseData, error: Throwable?) {
-        delegate.signalAwaitingSuccess(PostpareTestCase(testCaseData, error))
+        delegate.signalAwaitingSuccess(
+            PostpareTestCase(testCaseData, error),
+            timeouts.postpareTestCaseTimeout.delegated(1)
+        )
     }
 
     override fun canProvideDependency(dependencyType: Class<*>): Boolean {
         val msg = CanProvideParameter(dependencyType)
-        delegate.signalAwaitingSuccess(msg)
+        delegate.signalAwaitingSuccess(msg, timeouts.defaultTimeout)
         return runBlocking { msg.result.await() }
     }
 
     override fun canProvideTestCaseDependency(testCaseData: TestCaseData, dependencyType: Class<*>): Boolean {
         val msg = CanProvideTestCaseParameter(testCaseData, dependencyType)
-        delegate.signalAwaitingSuccess(msg)
+        delegate.signalAwaitingSuccess(msg, timeouts.defaultTimeout)
         return runBlocking { msg.result.await() }
     }
 
     override fun resolveDependency(dependencyType: Class<*>): Any {
         val msg = ResolveParameter(dependencyType)
-        delegate.signalAwaitingSuccess(msg)
+        delegate.signalAwaitingSuccess(msg, timeouts.resolveTestClassDependencyTimeout)
         return runBlocking { msg.result.await() }
     }
 
     override fun resolveTestCaseDependency(testCaseData: TestCaseData, dependencyType: Class<*>): Any {
         val msg = ResolveTestCaseParameter(testCaseData, dependencyType)
-        delegate.signalAwaitingSuccess(msg)
+        delegate.signalAwaitingSuccess(msg, timeouts.resolveTestCaseDependencyTimeout.delegated(1))
         return runBlocking { msg.result.await() }
     }
 }

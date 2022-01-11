@@ -24,7 +24,7 @@ package de.quantummaid.testmaid.internal.statemachine
 import kotlin.reflect.KClass
 import kotlin.reflect.cast
 
-internal data class Transition<
+data class Transition<
         StateSuperClass : Any,
         MessageSuperClass : Any,
         OriginState : StateSuperClass,

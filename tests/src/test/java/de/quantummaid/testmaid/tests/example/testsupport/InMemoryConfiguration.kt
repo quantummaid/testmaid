@@ -25,7 +25,9 @@ import de.quantummaid.injectmaid.InjectMaidBuilder
 import de.quantummaid.injectmaid.api.InjectorConfiguration
 import de.quantummaid.injectmaid.api.ReusePolicy
 import de.quantummaid.testmaid.model.testcase.TestCaseScope
+import de.quantummaid.testmaid.model.testcase.withTestCaseScope
 import de.quantummaid.testmaid.model.testclass.TestClassScope
+import de.quantummaid.testmaid.model.testclass.withTestClassScope
 import de.quantummaid.testmaid.model.testsuite.TestSuiteScope
 import de.quantummaid.testmaid.tests.example.fixtures.ExistingCustomers
 import de.quantummaid.testmaid.tests.example.testsupport.infra.mem.CustomerRepositoryInMemory
@@ -36,30 +38,24 @@ import de.quantummaid.testmaid.tests.example.usecases.UseCaseLogFacade
 
 class InMemoryConfiguration : InjectorConfiguration {
     override fun apply(builder: InjectMaidBuilder) {
-        builder
-            .withScope(TestSuiteScope::class.java) { testSuiteInjectMaid ->
-                testSuiteInjectMaid.withScope(TestClassScope::class.java) { testClassInjectMaid ->
-                    testClassInjectMaid
-                        .withScope(TestCaseScope::class.java) { testCaseInjectMaid ->
-                            testCaseInjectMaid
-                                .withImplementation(
-                                    SystemUnderTest::class.java,
-                                    SystemUnderTestInMemory::class.java,
-                                    ReusePolicy.DEFAULT_SINGLETON
-                                )
-                                .withImplementation(
-                                    UseCaseLogFacade::class.java,
-                                    UseCaseLogFacadeInMemory::class.java,
-                                    ReusePolicy.DEFAULT_SINGLETON
-                                )
-                                .withImplementation(
-                                    CustomerRepository::class.java,
-                                    CustomerRepositoryInMemory::class.java,
-                                    ReusePolicy.DEFAULT_SINGLETON
-                                )
-                                .withType(ExistingCustomers::class.java, ReusePolicy.DEFAULT_SINGLETON)
-                        }
-                }
-            }
+        builder.withTestCaseScope { testCaseInjectMaid ->
+            testCaseInjectMaid
+                .withImplementation(
+                    SystemUnderTest::class.java,
+                    SystemUnderTestInMemory::class.java,
+                    ReusePolicy.DEFAULT_SINGLETON
+                )
+                .withImplementation(
+                    UseCaseLogFacade::class.java,
+                    UseCaseLogFacadeInMemory::class.java,
+                    ReusePolicy.DEFAULT_SINGLETON
+                )
+                .withImplementation(
+                    CustomerRepository::class.java,
+                    CustomerRepositoryInMemory::class.java,
+                    ReusePolicy.DEFAULT_SINGLETON
+                )
+                .withType(ExistingCustomers::class.java, ReusePolicy.DEFAULT_SINGLETON)
+        }
     }
 }

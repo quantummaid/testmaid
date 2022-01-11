@@ -29,7 +29,7 @@ data class StateMachineMessage<T>(
     val exception: CompletableDeferred<Throwable?> = CompletableDeferred()
 )
 
-internal class StateMachine<StateSuperClass : Any, MessageSuperClass : Any>(
+class StateMachine<StateSuperClass : Any, MessageSuperClass : Any>(
     private val transitions: Set<Transition<StateSuperClass, MessageSuperClass, *, *, *>>,
     private val queries: Set<Query<StateSuperClass, MessageSuperClass, *, *>>,
     initialState: StateSuperClass,

@@ -24,11 +24,15 @@ package de.quantummaid.testmaid.internal.statemachine
 import de.quantummaid.reflectmaid.actors.Actor
 import de.quantummaid.reflectmaid.actors.ActorBuilder
 import de.quantummaid.reflectmaid.actors.ActorPool
-import kotlin.time.seconds
+import de.quantummaid.testmaid.internal.statemachine.ResponseException.Companion.becauseOfIncomplete
+import kotlinx.coroutines.CompletableDeferred
+import java.util.concurrent.CompletableFuture
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 object CloseMessage
 
-internal class StateMachineActor<StateSuperClass : Any, MessageSuperClass : Any> private constructor(
+class StateMachineActor<StateSuperClass : Any, MessageSuperClass : Any> private constructor(
     private val stateMachine: StateMachine<StateSuperClass, MessageSuperClass>,
     private val actor: Actor<StateMachine<StateSuperClass, MessageSuperClass>, Any>,
 ) : AutoCloseable {
@@ -50,9 +54,9 @@ internal class StateMachineActor<StateSuperClass : Any, MessageSuperClass : Any>
         }
     }
 
-    fun signalAwaitingSuccess(msg: MessageSuperClass) {
+    fun signalAwaitingSuccess(msg: MessageSuperClass, timeout: Duration) {
         val stateMachineMessage = StateMachineMessage(msg)
-        actor.signalAwaitingSuccess(stateMachineMessage, 10.seconds)
+        actor.signalAwaitingSuccess(stateMachineMessage, timeout)
     }
 
     fun isActive(): Boolean {

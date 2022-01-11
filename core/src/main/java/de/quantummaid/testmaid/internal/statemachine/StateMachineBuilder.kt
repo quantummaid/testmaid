@@ -25,7 +25,7 @@ import de.quantummaid.reflectmaid.actors.ActorPool
 import de.quantummaid.testmaid.internal.statemachine.StateMachineActor.Companion.launch
 import kotlin.reflect.KClass
 
-internal class StateMachineBuilder<StateSuperClass : Any, MessageSuperClass : Any>(private val name: String) {
+class StateMachineBuilder<StateSuperClass : Any, MessageSuperClass : Any>(private val name: String) {
     companion object {
         val actorPool = ActorPool(ActorPool.fixedThreadPoolDispatcher(3, "TestMaidActorPool"))
 
@@ -36,10 +36,10 @@ internal class StateMachineBuilder<StateSuperClass : Any, MessageSuperClass : An
         }
     }
 
-    private val transitions = mutableSetOf<Transition<StateSuperClass, MessageSuperClass, *, *, *>>()
-    private val queries = mutableSetOf<Query<StateSuperClass, MessageSuperClass, *, *>>()
+    val transitions = mutableSetOf<Transition<StateSuperClass, MessageSuperClass, *, *, *>>()
+    val queries = mutableSetOf<Query<StateSuperClass, MessageSuperClass, *, *>>()
     private var initialState: StateSuperClass? = null
-    private var endStateSuperClass: KClass<out StateSuperClass>? = null
+    var endStateSuperClass: KClass<out StateSuperClass>? = null
 
     fun withInitialState(initial: StateSuperClass): StateMachineBuilder<StateSuperClass, MessageSuperClass> {
         this.initialState = initial
@@ -72,6 +72,13 @@ internal class StateMachineBuilder<StateSuperClass : Any, MessageSuperClass : An
     }
 
     fun build(): StateMachineActor<StateSuperClass, MessageSuperClass> {
+        val stateMachine: StateMachine<StateSuperClass, MessageSuperClass> = StateMachine(
+            transitions, queries, initialState!!, endStateSuperClass!!
+        )
+        return build(actorPool)
+    }
+
+    fun build(actorPool: ActorPool): StateMachineActor<StateSuperClass, MessageSuperClass> {
         val stateMachine: StateMachine<StateSuperClass, MessageSuperClass> = StateMachine(
             transitions, queries, initialState!!, endStateSuperClass!!
         )

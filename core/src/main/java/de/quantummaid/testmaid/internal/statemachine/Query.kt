@@ -24,7 +24,7 @@ package de.quantummaid.testmaid.internal.statemachine
 import kotlin.reflect.KClass
 import kotlin.reflect.cast
 
-internal data class Query<StateSuperClass : Any, MessageSuperClass : Any, OriginState : StateSuperClass, Message : MessageSuperClass>(
+data class Query<StateSuperClass : Any, MessageSuperClass : Any, OriginState : StateSuperClass, Message : MessageSuperClass>(
     val originStateClass: KClass<OriginState>,
     val messageClass: KClass<Message>,
     val handler: OriginState.(Message) -> Unit

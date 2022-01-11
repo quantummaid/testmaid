@@ -21,4 +21,14 @@
 
 package de.quantummaid.testmaid.model.testcase
 
+import de.quantummaid.injectmaid.InjectMaidBuilder
+import de.quantummaid.injectmaid.api.InjectorConfiguration
+import de.quantummaid.testmaid.model.testclass.withTestClassScope
+
+fun InjectMaidBuilder.withTestCaseScope(config: InjectorConfiguration): InjectMaidBuilder {
+    return this.withTestClassScope() { testClassScope ->
+        testClassScope.withScope(TestCaseScope::class.java, config)
+    }
+}
+
 class TestCaseScope(val testCaseData: TestCaseData)

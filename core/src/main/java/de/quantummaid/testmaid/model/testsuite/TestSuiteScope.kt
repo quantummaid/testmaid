@@ -21,4 +21,11 @@
 
 package de.quantummaid.testmaid.model.testsuite
 
+import de.quantummaid.injectmaid.InjectMaidBuilder
+import de.quantummaid.injectmaid.api.InjectorConfiguration
+
+fun InjectMaidBuilder.withTestSuiteScope(config: InjectorConfiguration): InjectMaidBuilder {
+    return this.rootBuilder().withScope(TestSuiteScope::class.java, config)
+}
+
 class TestSuiteScope()
